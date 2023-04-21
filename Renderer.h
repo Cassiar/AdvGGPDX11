@@ -2,10 +2,17 @@
 // a renderer class to hold all rendering
 // info and help easy postprocess work
 
+#include "SimpleShader.h"
+#include "GameEntity.h"
+#include "Lights.h"
+#include "Camera.h"
+#include "Sky.h"
+
 #include <Windows.h>
 #include <d3d11.h>
 #include <string>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
+#include <vector>
 
 // We can include the correct library files here
 // instead of in Visual Studio settings if we want
@@ -33,6 +40,17 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufferRTV,
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthBufferDSV,
 		unsigned int windowWidht, unsigned int windowHeight);
+
+	//handle begining of fram
+	//e.g., clearing buffers
+	void FrameStart();
+	void FrameEnd(bool vsync);
+	void RenderScene(
+		std::vector<std::shared_ptr<GameEntity>> entities,
+		std::vector<Light> lights,
+		std::shared_ptr<Sky> sky,
+		std::shared_ptr<Camera> camera,
+		int lightCount);
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
