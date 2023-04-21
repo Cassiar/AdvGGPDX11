@@ -23,6 +23,16 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufferRTV,
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthBufferDSV,
 		unsigned int windowWidth, unsigned int windowHeight);
+	~Renderer();
+
+	//calls reset on rtv and dsv
+	void PreResize();
+
+	//update fields with the new values
+	void PostResize(
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufferRTV,
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthBufferDSV,
+		unsigned int windowWidht, unsigned int windowHeight);
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
