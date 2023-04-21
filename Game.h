@@ -7,6 +7,7 @@
 #include "SimpleShader.h"
 #include "Lights.h"
 #include "Sky.h"
+#include "Renderer.h"
 
 #include <DirectXMath.h>
 #include <wrl/client.h>
@@ -65,5 +66,7 @@ private:
 	
 	// Should the ImGui demo window be shown?
 	bool showUIDemoWindow;
+
+	std::shared_ptr<Renderer> renderer;
 };
 
