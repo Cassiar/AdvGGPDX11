@@ -138,7 +138,6 @@ void Game::LoadAssetsAndCreateEntities()
 {
 	// Load shaders using our succinct LoadShader() macro
 	std::shared_ptr<SimpleVertexShader> vertexShader	= LoadShader(SimpleVertexShader, L"VertexShader.cso");
-	std::shared_ptr<SimplePixelShader> pixelShader		= LoadShader(SimplePixelShader, L"PixelShader.cso");
 	std::shared_ptr<SimplePixelShader> pixelShaderPBR	= LoadShader(SimplePixelShader, L"PixelShaderPBR.cso");
 	std::shared_ptr<SimplePixelShader> solidColorPS		= LoadShader(SimplePixelShader, L"SolidColorPS.cso");
 	
@@ -249,55 +248,6 @@ void Game::LoadAssetsAndCreateEntities()
 		irradiancePS,
 		specConvPS,
 		brdfLookupPS);
-
-	// Create non-PBR materials
-	std::shared_ptr<Material> cobbleMat2x = std::make_shared<Material>(pixelShader, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
-	cobbleMat2x->AddSampler("BasicSampler", samplerOptions);
-	cobbleMat2x->AddTextureSRV("Albedo", cobbleA);
-	cobbleMat2x->AddTextureSRV("NormalMap", cobbleN);
-	cobbleMat2x->AddTextureSRV("RoughnessMap", cobbleR);
-
-	std::shared_ptr<Material> cobbleMat4x = std::make_shared<Material>(pixelShader, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(4, 4));
-	cobbleMat4x->AddSampler("BasicSampler", samplerOptions);
-	cobbleMat4x->AddTextureSRV("Albedo", cobbleA);
-	cobbleMat4x->AddTextureSRV("NormalMap", cobbleN);
-	cobbleMat4x->AddTextureSRV("RoughnessMap", cobbleR);
-
-	std::shared_ptr<Material> floorMat = std::make_shared<Material>(pixelShader, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
-	floorMat->AddSampler("BasicSampler", samplerOptions);
-	floorMat->AddTextureSRV("Albedo", floorA);
-	floorMat->AddTextureSRV("NormalMap", floorN);
-	floorMat->AddTextureSRV("RoughnessMap", floorR);
-
-	std::shared_ptr<Material> paintMat = std::make_shared<Material>(pixelShader, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
-	paintMat->AddSampler("BasicSampler", samplerOptions);
-	paintMat->AddTextureSRV("Albedo", paintA);
-	paintMat->AddTextureSRV("NormalMap", paintN);
-	paintMat->AddTextureSRV("RoughnessMap", paintR);
-
-	std::shared_ptr<Material> scratchedMat = std::make_shared<Material>(pixelShader, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
-	scratchedMat->AddSampler("BasicSampler", samplerOptions);
-	scratchedMat->AddTextureSRV("Albedo", scratchedA);
-	scratchedMat->AddTextureSRV("NormalMap", scratchedN);
-	scratchedMat->AddTextureSRV("RoughnessMap", scratchedR);
-
-	std::shared_ptr<Material> bronzeMat = std::make_shared<Material>(pixelShader, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
-	bronzeMat->AddSampler("BasicSampler", samplerOptions);
-	bronzeMat->AddTextureSRV("Albedo", bronzeA);
-	bronzeMat->AddTextureSRV("NormalMap", bronzeN);
-	bronzeMat->AddTextureSRV("RoughnessMap", bronzeR);
-
-	std::shared_ptr<Material> roughMat = std::make_shared<Material>(pixelShader, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
-	roughMat->AddSampler("BasicSampler", samplerOptions);
-	roughMat->AddTextureSRV("Albedo", roughA);
-	roughMat->AddTextureSRV("NormalMap", roughN);
-	roughMat->AddTextureSRV("RoughnessMap", roughR);
-
-	std::shared_ptr<Material> woodMat = std::make_shared<Material>(pixelShader, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
-	woodMat->AddSampler("BasicSampler", samplerOptions);
-	woodMat->AddTextureSRV("Albedo", woodA);
-	woodMat->AddTextureSRV("NormalMap", woodN);
-	woodMat->AddTextureSRV("RoughnessMap", woodR);
 
 
 	// Create PBR materials
@@ -473,36 +423,6 @@ void Game::LoadAssetsAndCreateEntities()
 	entities.push_back(bronzeSpherePBR);
 	entities.push_back(roughSpherePBR);
 	entities.push_back(woodSpherePBR);
-
-	// Create the non-PBR entities ==============================
-	std::shared_ptr<GameEntity> cobSphere = std::make_shared<GameEntity>(sphereMesh, cobbleMat2x);
-	cobSphere->GetTransform()->SetPosition(-6, -2, 0);
-
-	std::shared_ptr<GameEntity> floorSphere = std::make_shared<GameEntity>(sphereMesh, floorMat);
-	floorSphere->GetTransform()->SetPosition(-4, -2, 0);
-
-	std::shared_ptr<GameEntity> paintSphere = std::make_shared<GameEntity>(sphereMesh, paintMat);
-	paintSphere->GetTransform()->SetPosition(-2, -2, 0);
-
-	std::shared_ptr<GameEntity> scratchSphere = std::make_shared<GameEntity>(sphereMesh, scratchedMat);
-	scratchSphere->GetTransform()->SetPosition(0, -2, 0);
-
-	std::shared_ptr<GameEntity> bronzeSphere = std::make_shared<GameEntity>(sphereMesh, bronzeMat);
-	bronzeSphere->GetTransform()->SetPosition(2, -2, 0);
-
-	std::shared_ptr<GameEntity> roughSphere = std::make_shared<GameEntity>(sphereMesh, roughMat);
-	roughSphere->GetTransform()->SetPosition(4, -2, 0);
-
-	std::shared_ptr<GameEntity> woodSphere = std::make_shared<GameEntity>(sphereMesh, woodMat);
-	woodSphere->GetTransform()->SetPosition(6, -2, 0);
-
-	entities.push_back(cobSphere);
-	entities.push_back(floorSphere);
-	entities.push_back(paintSphere);
-	entities.push_back(scratchSphere);
-	entities.push_back(bronzeSphere);
-	entities.push_back(roughSphere);
-	entities.push_back(woodSphere);
 
 
 	// Save assets needed for drawing point lights
