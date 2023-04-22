@@ -21,16 +21,49 @@ Renderer::Renderer(
 	this->depthBufferDSV = depthBufferDSV;
 	this->windowWidth = windowWidth;
 	this->windowHeight = windowHeight;
+
+	//make the mrts needed for ssao
+	MakeRTV(sceneColorRTV);
+	MakeRTV(sceneAmbientColorRTV);
+	MakeRTV(sceneDepthsRTV);
+	MakeRTV(sceneNormalsRTV);
+	MakeRTV(ssaoRTV);
+	MakeRTV(blurredSsaoRTV);
 }
 
 Renderer::~Renderer()
 {
 }
 
+//create the MRTs needed for ssao post processing
+void Renderer::MakeRTV(Microsoft::WRL::ComPtr<ID3D11RenderTargetView> rtv)
+{
+	//make a texture that rtv can
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
+	swapChain->GetBuffer(
+		0,
+		__uuidof(ID3D11Texture2D),
+		(void**)tex.GetAddressOf());
+
+	// Now that we have the texture ref, create a render target view
+	// for the buffer so we can render into it.
+	if (tex != 0)
+	{
+		device->CreateRenderTargetView(tex.Get(), 0, rtv.GetAddressOf());
+	}
+}
+
 void Renderer::PreResize() 
 {
 	backBufferRTV.Reset();
 	depthBufferDSV.Reset();
+
+	sceneColorRTV.Reset();
+	sceneAmbientColorRTV.Reset();
+	sceneDepthsRTV.Reset();
+	sceneNormalsRTV.Reset();
+	ssaoRTV.Reset();
+	blurredSsaoRTV.Reset();
 }
 
 void Renderer::FrameStart()
@@ -116,4 +149,12 @@ void Renderer::PostResize(
 	this->depthBufferDSV = depthBufferDSV;
 	this->windowWidth = windowWidth;
 	this->windowHeight = windowHeight;
+
+	//recreate rtvs for ssao
+	MakeRTV(sceneColorRTV);
+	MakeRTV(sceneAmbientColorRTV);
+	MakeRTV(sceneDepthsRTV);
+	MakeRTV(sceneNormalsRTV);
+	MakeRTV(ssaoRTV);
+	MakeRTV(blurredSsaoRTV);
 }

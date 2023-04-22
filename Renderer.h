@@ -61,5 +61,15 @@ private:
 
 	unsigned int windowWidth;
 	unsigned int windowHeight;
+
+	//middle rtv for hold info before post processing
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneColorRTV;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneAmbientColorRTV;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneDepthsRTV;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneNormalsRTV;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> ssaoRTV;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> blurredSsaoRTV;
+
+	void MakeRTV(Microsoft::WRL::ComPtr<ID3D11RenderTargetView> rtv);
 };
 
