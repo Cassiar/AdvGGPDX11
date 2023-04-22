@@ -127,7 +127,8 @@ void Game::Init()
 	//create the renderer class
 	//pass in all needed rtvs
 	renderer = std::make_shared<Renderer>(device, context, swapChain,
-		backBufferRTV, depthBufferDSV, this->windowWidth, this->windowHeight);
+		backBufferRTV, depthBufferDSV, samplerOptions, clampSamplerOptions,
+		this->windowWidth, this->windowHeight);
 }
 
 

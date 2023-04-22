@@ -24,8 +24,8 @@
 enum RenderTargetType {
 	SCENE_COLORS_NO_AMBIENT,
 	SCENE_AMBIENT,
-	SCENE_DEPTH,
 	SCENE_NORMALS,
+	SCENE_DEPTH,
 	SSAO_RESULTS,
 	SSAO_BLUR,
 
@@ -42,6 +42,8 @@ public:
 		Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain,
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufferRTV,
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthBufferDSV,
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerOptions,
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> clampSamplerOptions,
 		unsigned int windowWidth, unsigned int windowHeight);
 	~Renderer();
 
@@ -75,13 +77,26 @@ private:
 	unsigned int windowWidth;
 	unsigned int windowHeight;
 
+	//shared pointers to the ssao specific shaders
+	std::shared_ptr<SimpleVertexShader> fullscreenVS;
+	std::shared_ptr<SimplePixelShader> ssaoCalcPS;
+	std::shared_ptr<SimplePixelShader> ssaoBlurPS;
+	std::shared_ptr<SimplePixelShader> finalCombinePS;
+
 	//middle rtv & srv to hold info before post processing
 	//six in total for ssao
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mRTVs[RenderTargetType::TYPE_COUNT];
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSRVs[RenderTargetType::TYPE_COUNT];
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> randomsSRV;
+
+	//a basic and clamp sampler
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerOptions;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> clampSamplerOptions;
+
 	int numOffsets = 64;
 	DirectX::XMFLOAT4 ssaoOffsets[64];
+	float ssaoRadius = 1;
 
 	void CreateRenderTarget(unsigned int width, unsigned int height,
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv,

@@ -42,6 +42,7 @@ public:
 	// Getters
 	DirectX::XMFLOAT4X4 GetView();
 	DirectX::XMFLOAT4X4 GetProjection();
+	DirectX::XMFLOAT4X4 GetInverseProjection();
 	Transform* GetTransform();
 	float GetAspectRatio();
 
@@ -70,6 +71,7 @@ private:
 	// Camera matrices
 	DirectX::XMFLOAT4X4 viewMatrix;
 	DirectX::XMFLOAT4X4 projMatrix;
+	DirectX::XMFLOAT4X4 invProjMatrix;
 
 	Transform transform;
 
