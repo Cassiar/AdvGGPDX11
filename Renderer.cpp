@@ -4,6 +4,11 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
+using namespace DirectX;
+
+// Helper macro for getting a float between min and max
+#define RandomRange(min, max) (float)rand() / RAND_MAX * (max - min) + min
+
 //currently just sets up needed variables.
 //in the future it could setup shadow mapping or similar things
 Renderer::Renderer(
@@ -17,18 +22,10 @@ Renderer::Renderer(
 	this->device = device;
 	this->context = context;
 	this->swapChain = swapChain;
-	this->backBufferRTV = backBufferRTV;
-	this->depthBufferDSV = depthBufferDSV;
-	this->windowWidth = windowWidth;
-	this->windowHeight = windowHeight;
 
-	//make the mrts needed for ssao
-	MakeRTV(sceneColorRTV);
-	MakeRTV(sceneAmbientColorRTV);
-	MakeRTV(sceneDepthsRTV);
-	MakeRTV(sceneNormalsRTV);
-	MakeRTV(ssaoRTV);
-	MakeRTV(blurredSsaoRTV);
+
+	//call post resize since it recreates render targets
+	this->PostResize(backBufferRTV, depthBufferDSV, windowWidth, windowHeight);
 }
 
 Renderer::~Renderer()
@@ -36,21 +33,42 @@ Renderer::~Renderer()
 }
 
 //create the MRTs needed for ssao post processing
-void Renderer::MakeRTV(Microsoft::WRL::ComPtr<ID3D11RenderTargetView> rtv)
+void Renderer::CreateRenderTarget(
+	unsigned int width, unsigned int height,
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv,
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv,
+	DXGI_FORMAT colorFormat)
 {
-	//make a texture that rtv can
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
-	swapChain->GetBuffer(
-		0,
-		__uuidof(ID3D11Texture2D),
-		(void**)tex.GetAddressOf());
 
-	// Now that we have the texture ref, create a render target view
-	// for the buffer so we can render into it.
-	if (tex != 0)
-	{
-		device->CreateRenderTargetView(tex.Get(), 0, rtv.GetAddressOf());
-	}
+	D3D11_TEXTURE2D_DESC texDesc = {};
+	//set width and height of texture
+	texDesc.Width = width;
+	texDesc.Height = height;
+	texDesc.ArraySize = 1;
+	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE; //both rendering in, and sampling
+	texDesc.CPUAccessFlags = 0;
+	texDesc.Format = colorFormat;
+	texDesc.MipLevels = 1;
+	texDesc.MiscFlags = 0;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	device->CreateTexture2D(&texDesc, 0, tex.GetAddressOf());
+
+	// Make the render target view
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D; // This points to a Texture2D
+	rtvDesc.Texture2D.MipSlice = 0;                             // Which mip are we rendering into?
+	rtvDesc.Format = texDesc.Format;                // Same format as texture
+	device->CreateRenderTargetView(tex.Get(), &rtvDesc, rtv.GetAddressOf());
+
+	// Create the shader resource view using default options 
+	device->CreateShaderResourceView(
+		tex.Get(),     // Texture resource itself
+		0,                   // Null description = default SRV options
+		srv.GetAddressOf()); // ComPtr<ID3D11ShaderResourceView>
 }
 
 void Renderer::PreResize() 
@@ -58,12 +76,36 @@ void Renderer::PreResize()
 	backBufferRTV.Reset();
 	depthBufferDSV.Reset();
 
-	sceneColorRTV.Reset();
-	sceneAmbientColorRTV.Reset();
-	sceneDepthsRTV.Reset();
-	sceneNormalsRTV.Reset();
-	ssaoRTV.Reset();
-	blurredSsaoRTV.Reset();
+
+}
+
+void Renderer::PostResize(
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufferRTV,
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthBufferDSV,
+	unsigned int windowWidth, unsigned int windowHeight)
+{
+	this->backBufferRTV = backBufferRTV;
+	this->depthBufferDSV = depthBufferDSV;
+	this->windowWidth = windowWidth;
+	this->windowHeight = windowHeight;
+	
+	//reset extra post process render targets
+	for (int i = 0; i < RenderTargetType::TYPE_COUNT; i++) {
+		mRTVs[i].Reset();
+		mSRVs[i].Reset();
+	}
+
+	//recreate rtvs for ssao
+	for (int i = 0; i < RenderTargetType::TYPE_COUNT; i++) {
+		if (i == RenderTargetType::SCENE_DEPTH) {
+			CreateRenderTarget(windowWidth, windowHeight,
+				mRTVs[i], mSRVs[i], DXGI_FORMAT_R32_FLOAT);
+		}
+		else {
+			CreateRenderTarget(windowWidth, windowHeight,
+				mRTVs[i], mSRVs[i]);
+		}
+	}
 }
 
 void Renderer::FrameStart()
@@ -138,23 +180,4 @@ void Renderer::RenderScene(
 
 	// Draw the sky
 	sky->Draw(camera);
-}
-
-void Renderer::PostResize(
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufferRTV,
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthBufferDSV,
-	unsigned int windowWidht, unsigned int windowHeight) 
-{
-	this->backBufferRTV = backBufferRTV;
-	this->depthBufferDSV = depthBufferDSV;
-	this->windowWidth = windowWidth;
-	this->windowHeight = windowHeight;
-
-	//recreate rtvs for ssao
-	MakeRTV(sceneColorRTV);
-	MakeRTV(sceneAmbientColorRTV);
-	MakeRTV(sceneDepthsRTV);
-	MakeRTV(sceneNormalsRTV);
-	MakeRTV(ssaoRTV);
-	MakeRTV(blurredSsaoRTV);
 }

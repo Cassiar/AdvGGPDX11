@@ -1,3 +1,4 @@
+#pragma once
 //@author: cassiar
 // a renderer class to hold all rendering
 // info and help easy postprocess work
@@ -19,7 +20,19 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
-#pragma once
+//enum to allow easy access to rtv names
+enum RenderTargetType {
+	SCENE_COLORS_NO_AMBIENT,
+	SCENE_AMBIENT,
+	SCENE_DEPTH,
+	SCENE_NORMALS,
+	SSAO_RESULTS,
+	SSAO_BLUR,
+
+	//this will allways equal count since enums start at 0
+	TYPE_COUNT
+};
+
 class Renderer
 {
 public:
@@ -39,7 +52,7 @@ public:
 	void PostResize(
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufferRTV,
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthBufferDSV,
-		unsigned int windowWidht, unsigned int windowHeight);
+		unsigned int windowWidth, unsigned int windowHeight);
 
 	//handle begining of fram
 	//e.g., clearing buffers
@@ -62,14 +75,17 @@ private:
 	unsigned int windowWidth;
 	unsigned int windowHeight;
 
-	//middle rtv for hold info before post processing
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneColorRTV;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneAmbientColorRTV;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneDepthsRTV;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneNormalsRTV;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> ssaoRTV;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> blurredSsaoRTV;
+	//middle rtv & srv to hold info before post processing
+	//six in total for ssao
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mRTVs[RenderTargetType::TYPE_COUNT];
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSRVs[RenderTargetType::TYPE_COUNT];
 
-	void MakeRTV(Microsoft::WRL::ComPtr<ID3D11RenderTargetView> rtv);
+	int numOffsets = 64;
+	DirectX::XMFLOAT4 ssaoOffsets[64];
+
+	void CreateRenderTarget(unsigned int width, unsigned int height,
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv,
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv,
+		DXGI_FORMAT colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM);
 };
 
