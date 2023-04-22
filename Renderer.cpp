@@ -26,6 +26,25 @@ Renderer::Renderer(
 
 	//call post resize since it recreates render targets
 	this->PostResize(backBufferRTV, depthBufferDSV, windowWidth, windowHeight);
+
+	//create array of offsets ssao will use
+	for (int i = 0; i < numOffsets; i++) {
+		ssaoOffsets[i] = XMFLOAT4(
+			(float)rand() / RAND_MAX * 2 - 1, //gets range -1 to 1
+			(float)rand() / RAND_MAX * 2 - 1,
+			(float)rand() / RAND_MAX, //range 0 to 1
+			0);
+
+		XMVECTOR offset = XMVector3Normalize(XMLoadFloat4(&ssaoOffsets[i]));
+
+		//scale so that more values are closer to min than max
+		float scale = (float)i / numOffsets;
+		XMVECTOR acceleratedScale = XMVectorLerp(
+			XMVectorSet(0.1f, 0.1f, 0.1f, 1),
+			XMVectorSet(1, 1, 1, 1),
+			scale * scale);
+		XMStoreFloat4(&ssaoOffsets[i], offset * acceleratedScale);
+	}
 }
 
 Renderer::~Renderer()

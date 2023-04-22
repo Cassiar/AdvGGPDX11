@@ -58,8 +58,18 @@ TextureCube SpecularIBLMap		: register(t6);
 SamplerState BasicSampler		: register(s0);
 SamplerState ClampSampler		: register(s1);
 
+//for multiple render targets
+//we need to output to a struct
+struct PS_Output
+{
+	float4 colorNoAmbient	: SV_TARGET0;
+	float4 ambientColor		: SV_TARGET1;
+	float4 normal			: SV_TARGET2;
+	float depth			: SV_TARGET3;
+};
+
 // Entry point for this pixel shader
-float4 main(VertexToPixel input) : SV_TARGET
+PS_Output main(VertexToPixel input) : SV_TARGET
 {
 	// Always re-normalize interpolated direction vectors
 	input.normal = normalize(input.normal);
@@ -83,7 +93,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float3 specColor = lerp(F0_NON_METAL.rrr, surfaceColor.rgb, metal);
 
 	// Total color for this pixel
-	float3 totalColor = float3(0,0,0);
+	float3 totalDirectColor = float3(0,0,0);
 
 	// Loop through all lights this frame
 	for(int i = 0; i < lightCount; i++)
@@ -92,15 +102,15 @@ float4 main(VertexToPixel input) : SV_TARGET
 		switch (lights[i].Type)
 		{
 		case LIGHT_TYPE_DIRECTIONAL:
-			totalColor += DirLightPBR(lights[i], input.normal, input.worldPos, cameraPosition, roughness, metal, surfaceColor.rgb, specColor);
+			totalDirectColor += DirLightPBR(lights[i], input.normal, input.worldPos, cameraPosition, roughness, metal, surfaceColor.rgb, specColor);
 			break;
 
 		case LIGHT_TYPE_POINT:
-			totalColor += PointLightPBR(lights[i], input.normal, input.worldPos, cameraPosition, roughness, metal, surfaceColor.rgb, specColor);
+			totalDirectColor += PointLightPBR(lights[i], input.normal, input.worldPos, cameraPosition, roughness, metal, surfaceColor.rgb, specColor);
 			break;
 
 		case LIGHT_TYPE_SPOT:
-			totalColor += SpotLightPBR(lights[i], input.normal, input.worldPos, cameraPosition, roughness, metal, surfaceColor.rgb, specColor);
+			totalDirectColor += SpotLightPBR(lights[i], input.normal, input.worldPos, cameraPosition, roughness, metal, surfaceColor.rgb, specColor);
 			break;
 		}
 	}
@@ -122,8 +132,17 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float3 balancedDiff = DiffuseEnergyConserve(indirectDiffuse, specColor, metal);
 	float3 fullIndirect = indirectSpecular + balancedDiff * surfaceColor.rgb;
 
-	totalColor += fullIndirect;
+	//we are gamma correcting here
+	PS_Output output;
+	output.colorNoAmbient = float4(pow(totalDirectColor + indirectSpecular, 1.0f / 2.2f), 1);
+	output.ambientColor = float4(pow(balancedDiff, 1.0f / 2.2f), 1);
+	output.normal = float4(input.normal * 0.5f + 0.5f, 1); //pack into [0,1] range
+	output.depth = input.screenPosition.z;
+
+	return output;
+
+	//totalDirectColor += fullIndirect;
 
 	// Gamma correction
-	return float4(pow(totalColor, 1.0f / 2.2f), 1);
+	//return float4(pow(totaltotalDirectColorColor, 1.0f / 2.2f), 1);
 }
