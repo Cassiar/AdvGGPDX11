@@ -46,7 +46,7 @@ float3 ViewSpaceFromDepth(float depth, float2 uv) {
 float2 UVFromViewSpacePosition(float3 viewSpacePosition) {
 	//apply the proj mat then perspective divide
 	float4 samplePosScreen = mul(projMatrix, float4(viewSpacePosition, 1));
-	samplePosScreen.xyz / samplePosScreen.w;
+	samplePosScreen.xyz /= samplePosScreen.w;
 
 	//adjust from NDCs to UV coords
 	//don't forget to flip the y

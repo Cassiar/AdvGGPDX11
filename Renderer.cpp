@@ -28,7 +28,6 @@ Renderer::Renderer(
 	this->samplerOptions = samplerOptions;
 	this->clampSamplerOptions = clampSamplerOptions;
 
-
 	//call post resize since it recreates render targets
 	this->PostResize(backBufferRTV, depthBufferDSV, windowWidth, windowHeight);
 
@@ -53,7 +52,7 @@ Renderer::Renderer(
 	//init data for the texture
 	D3D11_SUBRESOURCE_DATA data = {};
 	data.pSysMem = randomPixels;
-	data.SysMemPitch = sizeof(XMFLOAT4);
+	data.SysMemPitch = sizeof(XMFLOAT4) * 4;
 
 	//create the texture and fill with data
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;

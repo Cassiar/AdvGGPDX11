@@ -96,7 +96,7 @@ private:
 
 	int numOffsets = 64;
 	DirectX::XMFLOAT4 ssaoOffsets[64];
-	float ssaoRadius = 1;
+	float ssaoRadius = 2.0f;
 
 	void CreateRenderTarget(unsigned int width, unsigned int height,
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv,

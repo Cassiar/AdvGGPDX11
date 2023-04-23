@@ -427,7 +427,7 @@ void Game::LoadAssetsAndCreateEntities()
 
 	//flat plane to help show ssao, goes through the pbr sphere
 	std::shared_ptr<GameEntity> plane = std::make_shared<GameEntity>(cubeMesh, paintMatPBR);
-	plane->GetTransform()->SetScale(14, 0.1f, 2);
+	plane->GetTransform()->SetScale(16, 0.1f, 4);
 	plane->GetTransform()->MoveRelative(0, 2, 0);
 
 	entities.push_back(plane);
