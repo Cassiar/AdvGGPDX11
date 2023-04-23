@@ -425,6 +425,12 @@ void Game::LoadAssetsAndCreateEntities()
 	entities.push_back(roughSpherePBR);
 	entities.push_back(woodSpherePBR);
 
+	//flat plane to help show ssao, goes through the pbr sphere
+	std::shared_ptr<GameEntity> plane = std::make_shared<GameEntity>(cubeMesh, paintMatPBR);
+	plane->GetTransform()->SetScale(14, 0.1f, 2);
+	plane->GetTransform()->MoveRelative(0, 2, 0);
+
+	entities.push_back(plane);
 
 	// Save assets needed for drawing point lights
 	lightMesh = sphereMesh;

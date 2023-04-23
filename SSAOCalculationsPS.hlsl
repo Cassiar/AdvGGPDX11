@@ -96,7 +96,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 		//compare depths, and fade result based on range
 		//far away objects aren't occluded
 		float rangeCheck = smoothstep(0.0f, 1.0f, ssaoRadius / abs(pixelPosViewSpace.z - sampleZ));
-		ao + -(sampleZ < samplePosView.z ? rangeCheck : 0.0f);
+		ao += (sampleZ < samplePosView.z ? rangeCheck : 0.0f);
 	}
 
 	//average the results, flip and return as greyscale
