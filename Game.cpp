@@ -766,6 +766,20 @@ void Game::BuildUI()
 			// Finalize the tree node
 			ImGui::TreePop();
 		}
+
+		//add node to see extra render targets
+		if (ImGui::TreeNode("MRTs")) 
+		{
+			ImGui::Image(renderer->GetSceneColorNoAmbient().Get(), ImVec2(500, 300));
+			ImGui::Image(renderer->GetSceneAmbient().Get(), ImVec2(500, 300));
+			ImGui::Image(renderer->GetSceneNormals().Get(), ImVec2(500, 300));
+			ImGui::Image(renderer->GetSceneDepth().Get(), ImVec2(500, 300));
+			ImGui::Image(renderer->GetSSAOResults().Get(), ImVec2(500, 300));
+			ImGui::Image(renderer->GetSSAOBlur().Get(), ImVec2(500, 300));
+
+			// Finalize the tree node
+			ImGui::TreePop();
+		}
 	}
 	ImGui::End();
 }

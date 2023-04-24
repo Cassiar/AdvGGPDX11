@@ -93,7 +93,7 @@ private:
 
 	//skip the last three mip levels because detail is too small
 	const unsigned int numMipLevelsToSkip = 3;
-	//num pixels square for each face
+	//num pixels square for each face. started at 256
 	const unsigned int cubeFaceSize = 256; 
 	//num pixels square of the look up textures
 	const unsigned int brdfSize = 256;

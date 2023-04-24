@@ -67,6 +67,14 @@ public:
 		std::shared_ptr<Camera> camera,
 		int lightCount);
 
+	//get methods for each of the mrts
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetSceneColorNoAmbient() { return mSRVs[RenderTargetType::SCENE_COLORS_NO_AMBIENT]; }
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetSceneAmbient() { return mSRVs[RenderTargetType::SCENE_AMBIENT]; }
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetSceneNormals() { return mSRVs[RenderTargetType::SCENE_NORMALS]; }
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetSceneDepth() { return mSRVs[RenderTargetType::SCENE_DEPTH]; }
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetSSAOResults() { return mSRVs[RenderTargetType::SSAO_RESULTS]; }
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetSSAOBlur() { return mSRVs[RenderTargetType::SSAO_BLUR]; }
+
 private:
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;

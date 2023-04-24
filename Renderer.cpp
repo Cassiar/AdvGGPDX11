@@ -200,9 +200,9 @@ void Renderer::FrameEnd(bool vsync)
 	// - At the very end of the frame (after drawing *everything*)
 	
 	//draw each of the render targets
-	for (int i = 0; i < RenderTargetType::TYPE_COUNT; i++) {
-		ImGui::Image(mSRVs[i].Get(), ImVec2(500, 300));
-	}
+	//for (int i = 0; i < RenderTargetType::TYPE_COUNT; i++) {
+	//	ImGui::Image(mSRVs[i].Get(), ImVec2(500, 300));
+	//}
 
 	// Draw the UI after everything else
 	ImGui::Render();
