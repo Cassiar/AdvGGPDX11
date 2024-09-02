@@ -10,7 +10,7 @@ cbuffer ExternalData : register(b0) {
 RWTexture3D<float4> UavOutputMap : register (u0);
 Texture3D<float4> InputMap : register (t0);
 Texture3D<float4> VelocityMap : register (t1);
-Texture3D<float4> DensityMap : register (t2);
+//Texture3D<float4> DensityMap : register (t2);
 
 SamplerState BilinearSampler : register(s0);
 

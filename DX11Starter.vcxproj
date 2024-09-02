@@ -128,6 +128,7 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DXCore.cpp" />
+    <ClCompile Include="FluidField.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameEntity.cpp" />
     <ClCompile Include="Helpers.cpp" />
@@ -150,6 +151,7 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DXCore.h" />
+    <ClInclude Include="FluidField.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameEntity.h" />
     <ClInclude Include="Helpers.h" />
