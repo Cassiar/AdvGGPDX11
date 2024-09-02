@@ -1,3 +1,5 @@
+#include "FluidSimHelpers.hlsli"
+
 // Defines the input to this compute shader
 // used to handle globabl variables
 cbuffer ExternalData : register(b0) {
@@ -6,9 +8,9 @@ cbuffer ExternalData : register(b0) {
 };
 
 RWTexture3D<float4> UavOutputMap : register (u0);
-Texture3D<float4> InputMap : register (u1);
-Texture3D<float4> VelocityMap : register (u2);
-Texture3D<float4> DensityMap : register (u3);
+Texture3D<float4> InputMap : register (t0);
+Texture3D<float4> VelocityMap : register (t1);
+Texture3D<float4> DensityMap : register (t2);
 
 SamplerState BilinearSampler : register(s0);
 

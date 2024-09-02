@@ -1,11 +1,13 @@
+#include "FluidSimHelpers.hlsli"
+
 cbuffer ExternalData : register(b0) {
 	float deltaTime;
 	float invFluidSimGridRes; //(1/windowWidth, 1/windowHeigh)
 };
 
 RWTexture3D<float4> UavOutputMap : register (u0);
-Texture3D<float4> VelocityMap : register (u1);
-Texture3D<float4> PressureMap : register(u2);
+Texture3D<float4> VelocityMap : register (t0);
+Texture3D<float4> PressureMap : register(t1);
 
 SamplerState PointSampler : register(s0);
 
