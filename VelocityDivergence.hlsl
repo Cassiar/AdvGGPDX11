@@ -22,9 +22,9 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	float3 velFront = VelocityMap.Sample(PointSampler, coords + float3(0, 0, 1));
 
 	float velocityDivergence = 0.5f * (
-		(velRight - velLeft) +
-		(velTop - velBottom) +
-		(velFront - velBack));
+		(velRight.x - velLeft.x) +
+		(velTop.y - velBottom.y) +
+		(velFront.z - velBack.z));
 
 	UavOutputMap[DTid] = velocityDivergence.xxxx;
 }
