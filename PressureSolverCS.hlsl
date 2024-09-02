@@ -14,7 +14,7 @@ SamplerState PointSampler : register(s1);
 
 groupshared float pressureLDS[GROUP_SIZE + 2][GROUP_SIZE + 2][GROUP_SIZE + 2];
 
-[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+[numthreads(GROUP_SIZE, GROUP_SIZE, GROUP_SIZE)]
 void main(uint3 DTid : SV_DispatchThreadID, uint3 GRTid : SV_GroupThreadID)
 {
 	//load data to LDS

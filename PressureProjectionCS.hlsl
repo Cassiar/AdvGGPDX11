@@ -9,7 +9,7 @@ Texture3D<float4> PressureMap : register(u2);
 
 SamplerState PointSampler : register(s0);
 
-[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+[numthreads(GROUP_SIZE, GROUP_SIZE, GROUP_SIZE)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
 	float3 coords = (float3(DTid)+0.5f) * invFluidSimGridRes;

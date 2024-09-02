@@ -12,7 +12,7 @@ Texture3D<float4> DensityMap : register (u3);
 
 SamplerState BilinearSampler : register(s0);
 
-[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+[numthreads(GROUP_SIZE, GROUP_SIZE, GROUP_SIZE)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
 	//we're using center of each cell for sampling
