@@ -1,0 +1,291 @@
+struct GS_OUTPUT_FLUIDSIM 
+{   
+// Index of the current grid cell (i,j,k in [0,gridSize] range)    
+float3 cellIndex : TEXCOORD0;   // Texture coordinates (x,y,z in [0,1] range) for the    // current grid cell and its immediate neighbors    float3 CENTERCELL : TEXCOORD1;   
+float3 LEFTCELL   : TEXCOORD2;   
+float3 RIGHTCELL  : TEXCOORD3;   
+float3 BOTTOMCELL : TEXCOORD4;   
+float3 TOPCELL    : TEXCOORD5;   
+float3 DOWNCELL   : TEXCOORD6;   
+float3 UPCELL     : TEXCOORD7;   
+float4 pos        : SV_Position; // 2D slice vertex in    // homogeneous clip space    
+uint RTIndex    : SV_RenderTargetArrayIndex;  // Specifies    // destination slice 
+}; 
+
+float3 cellIndex2TexCoord(float3 index) {   
+// Convert a value in the range [0,gridSize] to one in the range [0,1].    
+return float3(index.x / textureWidth,                 
+index.y / textureHeight,                 
+(index.z+0.5) / textureDepth); 
+} 
+
+float4 PS_ADVECT_VEL(GS_OUTPUT_FLUIDSIM in,                      Texture3D velocity) : SV_Target {   
+float3 pos = in.cellIndex;   
+float3 cellVelocity = velocity.Sample(samPointClamp,                                         in.CENTERCELL).xyz;   
+pos -= timeStep * cellVelocity;   pos = cellIndex2TexCoord(pos);   
+return velocity.Sample(samLinear, pos); 
+} 
+
+float PS_DIVERGENCE(GS_OUTPUT_FLUIDSIM in,                     Texture3D velocity) : SV_Target {   
+// Get velocity values from neighboring cells.    
+float4 fieldL = velocity.Sample(samPointClamp, in.LEFTCELL);   
+float4 fieldR = velocity.Sample(samPointClamp, in.RIGHTCELL);   
+float4 fieldB = velocity.Sample(samPointClamp, in.BOTTOMCELL);   
+float4 fieldT = velocity.Sample(samPointClamp, in.TOPCELL);   
+float4 fieldD = velocity.Sample(samPointClamp, in.DOWNCELL);   
+float4 fieldU = velocity.Sample(samPointClamp, in.UPCELL);   
+// Compute the velocity's divergence using central differences.    
+float divergence =  0.5 * ((fieldR.x - fieldL.x)+                              (fieldT.y - fieldB.y)+                              (fieldU.z - fieldD.z));   
+return divergence; } 
+
+float PS_JACOBI(GS_OUTPUT_FLUIDSIM in,                 Texture3D pressure,                 Texture3D divergence) : SV_Target {   
+// Get the divergence at the current cell.    
+float dC = divergence.Sample(samPointClamp, in.CENTERCELL);   
+// Get pressure values from neighboring cells.   
+ float pL = pressure.Sample(samPointClamp, in.LEFTCELL);   
+float pR = pressure.Sample(samPointClamp, in.RIGHTCELL);   
+float pB = pressure.Sample(samPointClamp, in.BOTTOMCELL);   
+float pT = pressure.Sample(samPointClamp, in.TOPCELL);   
+float pD = pressure.Sample(samPointClamp, in.DOWNCELL);   
+float pU = pressure.Sample(samPointClamp, in.UPCELL);   
+// Compute the new pressure value for the center cell.    
+return(pL + pR + pB + pT + pU + pD - dC) / 6.0; 
+} 
+
+float4 PS_PROJECT(GS_OUTPUT_FLUIDSIM in,                   Texture3D pressure,                   Texture3D velocity): SV_Target {   
+// Compute the gradient of pressure at the current cell by    
+// taking central differences of neighboring pressure values.    
+float pL = pressure.Sample(samPointClamp, in.LEFTCELL);   
+float pR = pressure.Sample(samPointClamp, in.RIGHTCELL);   
+float pB = pressure.Sample(samPointClamp, in.BOTTOMCELL);   
+float pT = pressure.Sample(samPointClamp, in.TOPCELL);   
+float pD = pressure.Sample(samPointClamp, in.DOWNCELL);   
+float pU = pressure.Sample(samPointClamp, in.UPCELL);   
+float3 gradP = 0.5*float3(pR - pL, pT - pB, pU - pD);   
+// Project the velocity onto its divergence-free component by    
+// subtracting the gradient of pressure.    
+float3 vOld = velocity.Sample(samPointClamp, in.texcoords);   
+float3 vNew = vOld - gradP;   
+return float4(vNew, 0); }
+
+   float4 PS_ADVECT_MACCORMACK(GS_OUTPUT_FLUIDSIM in, float timestep) : SV_Target {   
+// Trace back along the initial characteristic - we'll use    
+// values near this semi-Lagrangian "particle" to clamp our    
+// final advected value.    
+float3 cellVelocity = velocity.Sample(samPointClamp, in.CENTERCELL).xyz; 
+float3 npos = in.cellIndex - timestep * cellVelocity; 
+// Find the cell corner closest to the "particle" and compute the    
+// texture coordinate corresponding to that location. 
+
+npos = floor(npos + float3(0.5f, 0.5f, 0.5f)); 
+npos = cellIndex2TexCoord(npos); 
+
+// Get the values of nodes that contribute to the interpolated value.    
+// Texel centers will be a half-texel away from the cell corner.    
+float3 ht = float3(0.5f / textureWidth, 0.5f / textureHeight, 0.5f / textureDepth); 
+float4 nodeValues[8]; 
+nodeValues[0] = phi_n.Sample(samPointClamp, npos + float3(-ht.x, -ht.y, -ht.z)); 
+nodeValues[1] = phi_n.Sample(samPointClamp, npos + float3(-ht.x, -ht.y, ht.z)); 
+nodeValues[2] = phi_n.Sample(samPointClamp, npos + float3(-ht.x, ht.y, -ht.z)); 
+nodeValues[3] = phi_n.Sample(samPointClamp, npos + float3(-ht.x, ht.y, ht.z)); 
+nodeValues[4] = phi_n.Sample(samPointClamp, npos + float3(ht.x, -ht.y, -ht.z)); 
+nodeValues[5] = phi_n.Sample(samPointClamp, npos + float3(ht.x, -ht.y, ht.z)); 
+nodeValues[6] = phi_n.Sample(samPointClamp, npos + float3(ht.x, ht.y, -ht.z)); 
+nodeValues[7] = phi_n.Sample(samPointClamp, npos + float3(ht.x, ht.y, ht.z)); 
+
+// Determine a valid range for the result.    
+float4 phiMin = min(min(min(min(min(min(min(     nodeValues[0],  nodeValues [1]), nodeValues [2]), nodeValues [3]),     nodeValues[4]), nodeValues [5]), nodeValues [6]), nodeValues [7]); 
+float4 phiMax = max(max(max(max(max(max(max(     nodeValues[0],  nodeValues [1]), nodeValues [2]), nodeValues [3]),     nodeValues[4]), nodeValues [5]), nodeValues [6]), nodeValues [7]); 
+// Perform final advection, combining values from intermediate    
+// advection steps.    
+float4 r = phi_n_1_hat.Sample(samLinear, nposTC) +            0.5 * (phi_n.Sample(samPointClamp, in.CENTERCELL) -                   phi_n_hat.Sample(samPointClamp, in.CENTERCELL)); 
+// Clamp result to the desired range. 
+r = max(min(r, phiMax), phiMin); 
+return r; } 
+
+
+   bool IsSolidCell(float3 cellTexCoords) {   
+return obstacles.Sample(samPointClamp, cellTexCoords).r > 0.9; } 
+
+float PS_JACOBI_OBSTACLE(GS_OUTPUT_FLUIDSIM in, Texture3D pressure, Texture3D divergence) : SV_Target {   
+// Get the divergence and pressure at the current cell.    
+float dC = divergence.Sample(samPointClamp, in.CENTERCELL);   
+float pC = pressure.Sample(samPointClamp, in.CENTERCELL);   
+
+// Get the pressure values from neighboring cells.    
+float pL = pressure.Sample(samPointClamp, in.LEFTCELL);   
+float pR = pressure.Sample(samPointClamp, in.RIGHTCELL);   
+float pB = pressure.Sample(samPointClamp, in.BOTTOMCELL);   
+float pT = pressure.Sample(samPointClamp, in.TOPCELL);   
+float pD = pressure.Sample(samPointClamp, in.DOWNCELL);   
+float pU = pressure.Sample(samPointClamp, in.UPCELL);   
+
+// Make sure that the pressure in solid cells is effectively ignored.    
+if(IsSolidCell(in.LEFTCELL)) pL = pC;   
+if(IsSolidCell(in.RIGHTCELL)) pR = pC;   
+if(IsSolidCell(in.BOTTOMCELL)) pB = pC;   
+if(IsSolidCell(in.TOPCELL)) pT = pC;   
+if(IsSolidCell(in.DOWNCELL)) pD = pC;   
+if(IsSolidCell(in.UPCELL)) pU = pC;   
+
+// Compute the new pressure value.    
+return(pL + pR + pB + pT + pU + pD - dC) /6.0; 
+} 
+
+float4 GetObstacleVelocity(float3 cellTexCoords) {   return obstaclevelocity.Sample(samPointClamp, cellTexCoords); } 
+
+float PS_DIVERGENCE_OBSTACLE(GS_OUTPUT_FLUIDSIM in, Texture3D velocity) : SV_Target {   
+// Get velocity values from neighboring cells.    
+float4 fieldL = velocity.Sample(samPointClamp, in.LEFTCELL);   
+float4 fieldR = velocity.Sample(samPointClamp, in.RIGHTCELL);   
+float4 fieldB = velocity.Sample(samPointClamp, in.BOTTOMCELL);   
+float4 fieldT = velocity.Sample(samPointClamp, in.TOPCELL);   
+float4 fieldD = velocity.Sample(samPointClamp, in.DOWNCELL);   
+float4 fieldU = velocity.Sample(samPointClamp, in.UPCELL);   
+
+// Use obstacle velocities for any solid cells.    
+
+if(IsBoundaryCell(in.LEFTCELL))     fieldL = GetObstacleVelocity(in.LEFTCELL);   
+if(IsBoundaryCell(in.RIGHTCELL))     fieldR = GetObstacleVelocity(in.RIGHTCELL);   
+if(IsBoundaryCell(in.BOTTOMCELL))    fieldB = GetObstacleVelocity(in.BOTTOMCELL);   
+if(IsBoundaryCell(in.TOPCELL))    fieldT = GetObstacleVelocity(in.TOPCELL);   
+if(IsBoundaryCell(in.DOWNCELL))    fieldD = GetObstacleVelocity(in.DOWNCELL);   
+if(IsBoundaryCell(in.UPCELL))    fieldU = GetObstacleVelocity(in.UPCELL);   
+
+// Compute the velocity's divergence using central differences.    
+float divergence =  0.5 * ((fieldR.x - fieldL.x) + (fieldT.y - fieldB.y) + (fieldU.z - fieldD.z));   
+return divergence; } 
+
+
+float4 PS_PROJECT_OBSTACLE(GS_OUTPUT_FLUIDSIM in, Texture3D pressure, Texture3D velocity): SV_Target {   
+// If the cell is solid, simply use the corresponding    
+// obstacle velocity.    
+if(IsBoundaryCell(in.CENTERCELL))   {     return GetObstacleVelocity(in.CENTERCELL);   }   
+
+// Get pressure values for the current cell and its neighbors.    
+float pC = pressure.Sample(samPointClamp, in.CENTERCELL);   
+float pL = pressure.Sample(samPointClamp, in.LEFTCELL);   
+float pR = pressure.Sample(samPointClamp, in.RIGHTCELL);   
+float pB = pressure.Sample(samPointClamp, in.BOTTOMCELL);   
+float pT = pressure.Sample(samPointClamp, in.TOPCELL);   
+float pD = pressure.Sample(samPointClamp, in.DOWNCELL);   
+float pU = pressure.Sample(samPointClamp, in.UPCELL);   
+
+// Get obstacle velocities in neighboring solid cells.    
+// (Note that these values are meaningless if a neighbor    
+// is not solid.)    
+float3 vL = GetObstacleVelocity(in.LEFTCELL);   
+float3 vR = GetObstacleVelocity(in.RIGHTCELL);   
+float3 vB = GetObstacleVelocity(in.BOTTOMCELL);   
+float3 vT = GetObstacleVelocity(in.TOPCELL);   
+float3 vD = GetObstacleVelocity(in.DOWNCELL);   
+float3 vU = GetObstacleVelocity(in.UPCELL);   
+
+float3 obstV = float3(0,0,0);   
+float3 vMask = float3(1,1,1);   
+// If an adjacent cell is solid, ignore its pressure    
+// and use its velocity.    
+
+if(IsBoundaryCell(in.LEFTCELL)) {     
+pL = pC; 
+obstV.x = vL.x; 
+vMask.x = 0; }   
+
+if(IsBoundaryCell(in.RIGHTCELL)) {     pR = pC; obstV.x = vR.x; vMask.x = 0; }   
+
+if(IsBoundaryCell(in.BOTTOMCELL)) {     pB = pC; obstV.y = vB.y; vMask.y = 0; }   
+
+if(IsBoundaryCell(in.TOPCELL)) {     pT = pC; obstV.y = vT.y; vMask.y = 0; }   
+
+if(IsBoundaryCell(in.DOWNCELL)) {     pD = pC; obstV.z = vD.z; vMask.z = 0; }   
+
+if(IsBoundaryCell(in.UPCELL)) {     pU = pC; obstV.z = vU.z; vMask.z = 0; }   
+
+// Compute the gradient of pressure at the current cell by    
+// taking central differences of neighboring pressure values.    
+float gradP = 0.5*float3(pR - pL, pT - pB, pU - pD);   
+// Project the velocity onto its divergence-free component by    
+// subtracting the gradient of pressure.    
+float3 vOld = velocity.Sample(samPointClamp, in.texcoords);   
+float3 vNew = vOld - gradP;   
+// Explicitly enforce the free-slip boundary condition by    
+// replacing the appropriate components of the new velocity with    
+// obstacle velocities.   
+vNew = (vMask * vNew) + obstV;   
+return vNew; } 
+
+bool IsNonEmptyCell(float3 cellTexCoords) {   return obstacles.Sample(samPointClamp, cellTexCoords, 0).r > 0.0); } 
+
+float4 PS_ADVECT_OBSTACLE(GS_OUTPUT_FLUIDSIM in, Texture3D velocity, Texture3D color) : SV_Target {   
+if(IsNonEmptyCell(in.CENTERCELL))   {     return 0;   }   
+float3 cellVelocity = velocity.Sample(samPointClamp, in.CENTERCELL).xyz;   
+float3 pos = in.cellIndex - timeStep*cellVelocity;   
+float3 npos = float3(pos.x / textureWidth, pos.y / textureHeight, (pos.z+0.5) / textureDepth);   
+return color.Sample(samLinear, npos); 
+ } 
+
+// GS_GEN_BOUNDARY_VELOCITY:    
+// Takes as input:    
+//  - one triangle (3 vertices),    
+//  - the sliceIdx,    
+//  - the sliceZ;    
+// and outputs:    
+//  - 2 triangles, if intersection of input triangle with slice    
+//    is a segment    
+//  - 0 triangles, otherwise    
+// The 2 triangles form a 1-voxel wide quadrilateral along the    
+// segment. 
+[maxvertexcount (4)] 
+void GS_GEN_BOUNDARY_VELOCITY(   triangle VsGenVelOutput input[3],   inout TriangleStream<GsGenVelOutput> triStream) 
+{   
+GsGenVelOutput output;   
+output.RTIndex = sliceIdx;   
+float minZ = min(min(input[0].Pos.z, input[1].Pos.z), input[2].Pos.z);   
+float maxZ = max(max(input[0].Pos.z, input[1].Pos.z), input[2].Pos.z);   
+if((sliceZ < minZ) || (sliceZ > maxZ))     
+// This triangle doesn't intersect the slice.    return;   
+
+GsGenVelIntVtx intersections[2];   
+for(int i=0; i<2; i++)   {     
+intersections[i].Pos = 0;     
+intersections[i].Velocity = 0;   
+}   
+
+int idx = 0;   
+if(idx < 2)     GetEdgePlaneIntersection(input[0], input[1], sliceZ, intersections, idx);   
+
+if(idx < 2)     GetEdgePlaneIntersection(input[1], input[2], sliceZ, intersections, idx);   
+
+if(idx < 2)     GetEdgePlaneIntersection(input[2], input[0], sliceZ, intersections, idx);   
+
+if(idx < 2)     return;   
+
+float sqrtOf2 = 1.414; 
+// The diagonal of a pixel    
+float2 normal = sqrtOf2 * normalize(     cross((input[1].Pos - input[0].Pos),           (input[2].Pos - input[0].Pos)).xy);   
+
+for(int i=0; i<2; i++)   {     
+output.Pos = float4(intersections[i].Pos, 0, 1);     
+output.Velocity = intersections[i].Velocity;     
+triStream.Append(output);     
+output.Pos = float4((intersections[i].Pos + (normal*projSpacePixDim)), 0, 1);     
+output.Velocity = intersections[i].Velocity;     
+triStream.Append(output);   
+}   
+
+triStream.RestartStrip(); 
+
+} 
+
+void GetEdgePlaneIntersection(   VsGenVelOutput vA,   VsGenVelOutput vB,   float sliceZ,   inout GsGenVelIntVtx intersections[2],   inout int idx) 
+{   
+float t = (sliceZ - vA.Pos.z) / (vB.Pos.z - vA.Pos.z);   
+if((t < 0) || (t > 1))    
+// Line-plane intersection is not within the edge's end points    
+// (A and B)    
+return;     
+
+intersections[idx].Pos = lerp(vA.Pos, vB.Pos, t).xy;     
+intersections[idx].Velocity = lerp(vA.Velocity, vB.Velocity, t);     
+idx++; 
+}
