@@ -16,12 +16,12 @@ void main( uint3 DTid : SV_DispatchThreadID )
 {
 	float3 coords = (float3(DTid)+0.5f) * invFluidSimGridRes;
 
-	float3 velLeft = VelocityMap.Sample(PointSampler, coords - float3(1, 0, 0));
-	float3 velRight = VelocityMap.Sample(PointSampler, coords + float3(1, 0, 0));
-	float3 velBottom = VelocityMap.Sample(PointSampler, coords - float3(0, 1, 0));
-	float3 velTop = VelocityMap.Sample(PointSampler, coords + float3(0, 1, 0));
-	float3 velBack = VelocityMap.Sample(PointSampler, coords - float3(0, 0, 1));
-	float3 velFront = VelocityMap.Sample(PointSampler, coords + float3(0, 0, 1));
+	float3 velLeft = VelocityMap[coords - float3(1, 0, 0)];
+	float3 velRight = VelocityMap[coords + float3(1, 0, 0)];
+	float3 velBottom = VelocityMap[coords - float3(0, 1, 0)];
+	float3 velTop = VelocityMap[coords + float3(0, 1, 0)];
+	float3 velBack = VelocityMap[coords - float3(0, 0, 1)];
+	float3 velFront = VelocityMap[coords + float3(0, 0, 1)];
 
 	float velocityDivergence = 0.5f * (
 		(velRight.x - velLeft.x) +

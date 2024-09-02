@@ -18,18 +18,17 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
 	// Compute the gradient of pressure at the current cell by    
 // taking central differences of neighboring pressure values.    
-	float pL = PressureMap.Sample(PointSampler, coords - float3(1, 0, 0));
-	float pR = PressureMap.Sample(PointSampler, coords + float3(1, 0, 0));
-	float pB = PressureMap.Sample(PointSampler, coords - float3(0, 1, 0));
-	float pT = PressureMap.Sample(PointSampler, coords + float3(0, 1, 0));
-	float pD = PressureMap.Sample(PointSampler, coords - float3(0, 0, 1));
-	float pU = PressureMap.Sample(PointSampler, coords + float3(0, 0, 1));
+	float pL = PressureMap[coords - float3(1, 0, 0)].r;
+	float pR = PressureMap[coords + float3(1, 0, 0)].r;
+	float pB = PressureMap[coords - float3(0, 1, 0)].r;
+	float pT = PressureMap[coords + float3(0, 1, 0)].r;
+	float pD = PressureMap[coords - float3(0, 0, 1)].r;
+	float pU = PressureMap[coords + float3(0, 0, 1)].r;
 
 	float3 gradP = 0.5 * float3(pR - pL, pT - pB, pU - pD);
 	// Project the velocity onto its divergence-free component by    
 	// subtracting the gradient of pressure.    
-	float3 vOld = VelocityMap.Sample(PointSampler, coords);
+	float3 vOld = VelocityMap.SampleLevel(PointSampler, coords, 0.0f);
 	float3 vNew = vOld - gradP;
 	UavOutputMap[DTid] = float4(vNew, 0);
-}
 }

@@ -23,7 +23,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
 	//move 'backwards' equal to the velocity map at this point
 	//to get prev pos of whats coming to this point
-	float2 pos = coords - deltaTime * VelocityMap.SampleLevel(BilinearSampler, coords, 0.0f);
+	float3 pos = coords - deltaTime * VelocityMap.SampleLevel(BilinearSampler, coords, 0.0f);
 
 	//write to output buffer which will be next frames data
 	UavOutputMap[DTid] = InputMap.SampleLevel(BilinearSampler, pos, 0.0f);

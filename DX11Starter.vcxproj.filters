@@ -205,7 +205,7 @@
     <FxCompile Include="PressureSolverCS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="VelocityDivergence.hlsl">
+    <FxCompile Include="VelocityDivergenceCS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="PressureProjectionCS.hlsl">

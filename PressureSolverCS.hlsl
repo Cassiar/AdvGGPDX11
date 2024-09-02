@@ -24,13 +24,13 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GRTid : SV_GroupThreadID)
 		(GRTid.y < (GROUP_SIZE + 2) / 2) &&
 		(GRTid.z < (GROUP_SIZE + 2) / 2))
 	{
-		float2 coordsNormalized = float2(DTid)*invFluidSimGridRes;
+		float3 coordsNormalized = DTid*invFluidSimGridRes;
 		coordsNormalized += GRTid.xyz * invFluidSimGridRes;
 
-		float4 pressureSample = PressureMap.Gather(PointSampler, coordsNormalized);
+		float4 pressureSample = PressureMap[coordsNormalized];
 
 		float topLeftPressure = pressureSample.w;
-		float bottomLeftPressure -= pressureSample.x;
+		float bottomLeftPressure = pressureSample.x;
 		float topRightPressure = pressureSample.z;
 		float bottomRightPressure = pressureSample.y;
 
@@ -59,7 +59,7 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GRTid : SV_GroupThreadID)
 	//then if adjacent cells are obstacles
 	//set that value to be center
 
-	float velocityDivergence = VelocityDivergenceMap.Load(coords).x;
+	float velocityDivergence = VelocityDivergenceMap[coords].x;
 
-	UavOutputMap[Dtid] = (left + right + bottom + top + back + front - velocityDivergence) / 6.0f;
+	UavOutputMap[DTid] = (left + right + bottom + top + back + front - velocityDivergence) / 6.0f;
 }
