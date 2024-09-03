@@ -548,6 +548,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		lightCount);
 
 	bool vsyncNecessary = vsync || !deviceSupportsTearing || isFullscreen;
+	fluidField->Simulate(deltaTime);
 
 	renderer->FrameEnd(vsyncNecessary);
 }

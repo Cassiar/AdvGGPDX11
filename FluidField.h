@@ -16,21 +16,26 @@ public:
 
 	Transform* GetTransform();
 
-	void Simulate();
+	void Simulate(float deltaTime);
 private:
-	int fluidSimGridRes = 8;
+	int fluidSimGridRes = 64;
 	float invFluidSimGridRes = 1.0f / fluidSimGridRes;
 	//int groupSize = 8;//8*8*8 =512 the grid res
 	
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityMaps[2];
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityDivergenceMap;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pressureMap[2];
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityMapSRVs[2];
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityMapUAVs[2];
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityDivergenceMapSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pressureMapSRVs[2];
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> pressureMapUAVs[2];
 
 	Transform transform;
 	std::shared_ptr<SimpleComputeShader> advectionShader;
 	std::shared_ptr<SimpleComputeShader> velocityDivergenceShader;
 	std::shared_ptr<SimpleComputeShader> PressureSolverShader;
 	std::shared_ptr<SimpleComputeShader> PressureProjectionShader;
+
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> bilinearSamplerOptions;
 
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;

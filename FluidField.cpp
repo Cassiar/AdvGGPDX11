@@ -19,8 +19,8 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 
 	//initialize random values for velocity and density map
 
-	const int textureSize = 8;
-	const int totalPixels = textureSize * textureSize * textureSize;
+	const int textureSize = 64;
+	const int totalPixels = textureSize * textureSize;// *textureSize;
 	XMFLOAT4 randomPixels[totalPixels] = {};
 	for (int i = 0; i < totalPixels; i++) {
 		XMVECTOR randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
@@ -28,13 +28,12 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	}
 
 	D3D11_TEXTURE2D_DESC td = {};
-	td.ArraySize = 1;
 	td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	td.MipLevels = 1;
 	td.Height = textureSize;
 	td.Width = textureSize;
-	td.SampleDesc.Count = 1;
+	//td.Depth = textureSize;
 
 	//init data for the texture
 	D3D11_SUBRESOURCE_DATA data = {};
@@ -48,10 +47,22 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Format = td.Format;
-	srvDesc.Texture2D.MipLevels = 1;
-	srvDesc.Texture2D.MostDetailedMip = 0;
 
-	device->CreateShaderResourceView(texture.Get(), &srvDesc, velocityMaps[0].GetAddressOf());
+	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+	uavDesc.Format = td.Format;
+
+	device->CreateShaderResourceView(texture.Get(), &srvDesc, velocityMapSRVs[0].GetAddressOf());
+	device->CreateUnorderedAccessView(texture.Get(), &uavDesc, velocityMapUAVs[0].GetAddressOf());
+
+	D3D11_SAMPLER_DESC bilinearSampDesc = {};
+	bilinearSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	bilinearSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	bilinearSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	bilinearSampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	bilinearSampDesc.MaxAnisotropy = 16;
+	bilinearSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&bilinearSampDesc, bilinearSamplerOptions.GetAddressOf());
 }
 
 FluidField::~FluidField()
@@ -63,6 +74,20 @@ Transform* FluidField::GetTransform()
 	return &transform;
 }
 
-void FluidField::Simulate()
+void FluidField::Simulate(float deltaTime)
 {
+	advectionShader->SetShader();
+	advectionShader->SetFloat("deltaTime", deltaTime);
+	advectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
+
+	advectionShader->CopyBufferData("ExternalData");
+
+	advectionShader->SetShaderResourceView("InputMap", velocityMapSRVs[0]);
+	advectionShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[0]);
+	advectionShader->SetUnorderedAccessView("UavOutputMap", velocityMapUAVs[1]);
+
+	advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions);
+
+
+	advectionShader->DispatchByThreads(8, 8, 8);
 }

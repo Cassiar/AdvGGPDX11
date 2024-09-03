@@ -7,9 +7,9 @@ cbuffer ExternalData : register(b0) {
 	float invFluidSimGridRes; //(1/windowWidth, 1/windowHeigh)
 };
 
-RWTexture3D<float4> UavOutputMap : register (u0);
-Texture3D<float4> InputMap : register (t0);
-Texture3D<float4> VelocityMap : register (t1);
+RWTexture2D<float4> UavOutputMap : register (u0);
+Texture2D<float4> InputMap : register (t0);
+Texture2D<float4> VelocityMap : register (t1);
 //Texture3D<float4> DensityMap : register (t2);
 
 SamplerState BilinearSampler : register(s0);
@@ -23,8 +23,8 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
 	//move 'backwards' equal to the velocity map at this point
 	//to get prev pos of whats coming to this point
-	float3 pos = coords - deltaTime * VelocityMap.SampleLevel(BilinearSampler, coords, 0.0f);
+	float2 pos = coords.xy - deltaTime * VelocityMap.SampleLevel(BilinearSampler, coords.xy, 0.0f);
 
 	//write to output buffer which will be next frames data
-	UavOutputMap[DTid] = InputMap.SampleLevel(BilinearSampler, pos, 0.0f);
+	UavOutputMap[DTid.xy] = InputMap.SampleLevel(BilinearSampler, pos, 0.0f);
 }
