@@ -18,7 +18,7 @@ public:
 
 	void Simulate();
 private:
-	int fluidSimGridRes = 128;
+	int fluidSimGridRes = 8;
 	float invFluidSimGridRes = 1.0f / fluidSimGridRes;
 	//int groupSize = 8;//8*8*8 =512 the grid res
 	

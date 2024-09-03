@@ -19,7 +19,7 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 
 	//initialize random values for velocity and density map
 
-	const int textureSize = 128;
+	const int textureSize = 8;
 	const int totalPixels = textureSize * textureSize * textureSize;
 	XMFLOAT4 randomPixels[totalPixels] = {};
 	for (int i = 0; i < totalPixels; i++) {

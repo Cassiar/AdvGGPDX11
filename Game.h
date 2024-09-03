@@ -8,6 +8,7 @@
 #include "Lights.h"
 #include "Sky.h"
 #include "Renderer.h"
+#include "FluidField.h"
 
 #include <DirectXMath.h>
 #include <wrl/client.h>
@@ -68,5 +69,7 @@ private:
 	bool showUIDemoWindow;
 
 	std::shared_ptr<Renderer> renderer;
+
+	std::shared_ptr<FluidField> fluidField;
 };
 

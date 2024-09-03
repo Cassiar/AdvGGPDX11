@@ -436,6 +436,9 @@ void Game::LoadAssetsAndCreateEntities()
 	lightMesh = sphereMesh;
 	lightVS = vertexShader;
 	lightPS = solidColorPS;
+
+	//fluild field object
+	fluidField = std::make_shared<FluidField>(device, context);
 }
 
 
