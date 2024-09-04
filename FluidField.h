@@ -19,6 +19,7 @@ public:
 	void Simulate(float deltaTime);
 private:
 	void SwapBuffers();
+	void CreateSRVandUAVTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav);
 
 	int fluidSimGridRes = 64;
 	float invFluidSimGridRes = 1.0f / fluidSimGridRes;
