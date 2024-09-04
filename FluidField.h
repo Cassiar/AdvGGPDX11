@@ -18,7 +18,7 @@ public:
 
 	void Simulate(float deltaTime);
 private:
-	int fluidSimGridRes = 512;
+	int fluidSimGridRes = 64;
 	float invFluidSimGridRes = 1.0f / fluidSimGridRes;
 	//int groupSize = 8;//8*8*8 =512 the grid res
 	
@@ -40,5 +40,7 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
+
+	DirectX::XMFLOAT4* randomPixels;// = new DirectX::XMFLOAT4[fluidSimGridRes * fluidSimGridRes * fluidSimGridRes];
 };
 

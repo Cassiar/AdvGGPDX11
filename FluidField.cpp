@@ -19,59 +19,74 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 
 	//initialize random values for velocity and density map
 
-	const int textureSize = 8;
-	const int totalPixels = textureSize * textureSize;// *textureSize;
-	XMFLOAT4 randomPixels[totalPixels] = {};
-	for (int i = 0; i < totalPixels; i++) {
+	const int textureSize = 64;
+	const int totalPixels = textureSize * textureSize *textureSize;
+	randomPixels = new XMFLOAT4[totalPixels];
+	for (int i = 0; i < 512; i++) {
 		XMVECTOR randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
 		XMStoreFloat4(&randomPixels[i], randomVec);
 	}
 
-	D3D11_TEXTURE2D_DESC td = {};
-	td.ArraySize = 1;
-	td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	td.MipLevels = 1;
-	td.Height = textureSize;
-	td.Width = textureSize;
-	td.SampleDesc.Count = 1;
-	//td.Depth = textureSize;
+	D3D11_TEXTURE3D_DESC desc = {};
+	desc.Width = fluidSimGridRes;
+	desc.Height = fluidSimGridRes;
+	desc.Depth = fluidSimGridRes;
+	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	desc.CPUAccessFlags = 0;
+	desc.MiscFlags = 0;
+	desc.MipLevels = 1;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+
+	//D3D11_TEXTURE3D_DESC td = {};
+	////td.ArraySize = 1;
+	//td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	//td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//td.MipLevels = 1;
+	//td.Height = fluidSimGridRes;
+	//td.Width = fluidSimGridRes;
+	////td.SampleDesc.Count = 1;
+	//td.Depth = fluidSimGridRes;
 
 	//init data for the texture
 	D3D11_SUBRESOURCE_DATA data = {};
 	data.pSysMem = randomPixels;
-	data.SysMemPitch = sizeof(XMFLOAT4) * 4;
+	data.SysMemPitch = sizeof(XMFLOAT4) * fluidSimGridRes;
+	data.SysMemSlicePitch = sizeof(XMFLOAT4) * fluidSimGridRes * fluidSimGridRes;
 
 	//create the texture and fill with data
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-	device->CreateTexture2D(&td, &data, texture.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> texture;
+	device->CreateTexture3D(&desc, &data, texture.GetAddressOf());
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Format = td.Format;
-	srvDesc.Texture2D.MipLevels = 1;
-	srvDesc.Texture2D.MostDetailedMip = 0;
+	//D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	//srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	//srvDesc.Format = td.Format;
+	//srvDesc.Texture3D.MipLevels = 1;
+	//srvDesc.Texture3D.MostDetailedMip = 0;
 
-	D3D11_TEXTURE2D_DESC tdUAV = {};
-	tdUAV.ArraySize = 1;
-	tdUAV.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
-	tdUAV.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	tdUAV.MipLevels = 1;
-	tdUAV.Height = textureSize;
-	tdUAV.Width = textureSize;
-	tdUAV.SampleDesc.Count = 1;
-	//td.Depth = textureSize;
-	// 
-	//create the texture and fill with data
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> textureUAV;
-	device->CreateTexture2D(&tdUAV, &data, textureUAV.GetAddressOf());
+	//D3D11_TEXTURE3D_DESC tdUAV = {};
+	////tdUAV.ArraySize = 1;
+	//tdUAV.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+	//tdUAV.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//tdUAV.MipLevels = 1;
+	//tdUAV.Height = fluidSimGridRes;
+	//tdUAV.Width = fluidSimGridRes;
+	////tdUAV.SampleDesc.Count = 1;
+	//tdUAV.Depth = fluidSimGridRes;
+	//
+	//// 
+	////create the texture and fill with data
+	//Microsoft::WRL::ComPtr<ID3D11Texture3D> textureUAV;
+	//device->CreateTexture3D(&tdUAV, &data, textureUAV.GetAddressOf());
 
-	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-	uavDesc.Format = tdUAV.Format;
+	//D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	//uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+	//uavDesc.Format = tdUAV.Format;
+	//uavDesc.Texture3D.FirstWSlice = 0;
+	//uavDesc.Texture3D.WSize = -1;
 
-	device->CreateShaderResourceView(texture.Get(), &srvDesc, velocityMapSRVs[0].GetAddressOf());
-	device->CreateUnorderedAccessView(textureUAV.Get(), &uavDesc, velocityMapUAVs[0].GetAddressOf());
+	device->CreateShaderResourceView(texture.Get(), 0, velocityMapSRVs[0].GetAddressOf());
+	device->CreateUnorderedAccessView(texture.Get(), 0, velocityMapUAVs[0].GetAddressOf());
 
 	D3D11_SAMPLER_DESC bilinearSampDesc = {};
 	bilinearSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -85,6 +100,7 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 
 FluidField::~FluidField()
 {
+	free(randomPixels);
 }
 
 Transform* FluidField::GetTransform()
