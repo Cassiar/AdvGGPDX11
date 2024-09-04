@@ -88,8 +88,8 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	//uavDesc.Texture3D.WSize = -1;
 
 	device->CreateShaderResourceView(texture.Get(), 0, velocityMapSRVs[0].GetAddressOf());
-	device->CreateShaderResourceView(texture.Get(), 0, velocityMapSRVs[1].GetAddressOf());
-	device->CreateUnorderedAccessView(blankTexture.Get(), 0, velocityMapUAVs[0].GetAddressOf());
+	device->CreateShaderResourceView(blankTexture.Get(), 0, velocityMapSRVs[1].GetAddressOf());
+	device->CreateUnorderedAccessView(texture.Get(), 0, velocityMapUAVs[0].GetAddressOf());
 	device->CreateUnorderedAccessView(blankTexture.Get(), 0, velocityMapUAVs[1].GetAddressOf());
 
 	D3D11_SAMPLER_DESC bilinearSampDesc = {};
