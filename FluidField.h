@@ -42,6 +42,7 @@ private:
 
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> bilinearSamplerOptions;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> pointSamplerOptions;
 
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;

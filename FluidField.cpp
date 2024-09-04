@@ -93,6 +93,15 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	bilinearSampDesc.MaxAnisotropy = 16;
 	bilinearSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&bilinearSampDesc, bilinearSamplerOptions.GetAddressOf());
+
+	D3D11_SAMPLER_DESC pointSampDesc = {};
+	pointSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	pointSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	pointSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	pointSampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;;
+	pointSampDesc.MaxAnisotropy = 16;
+	pointSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&pointSampDesc, pointSamplerOptions.GetAddressOf());
 }
 
 FluidField::~FluidField()
@@ -126,7 +135,23 @@ void FluidField::Simulate(float deltaTime)
 	advectionShader->SetShaderResourceView("VelocityMap", 0);
 	advectionShader->SetUnorderedAccessView("UavOutputMap", 0);
 
-	//velocityDivergenceShader->SetShader();
+
+	velocityDivergenceShader->SetShader();
+	velocityDivergenceShader->SetFloat("deltaTime", deltaTime);
+	velocityDivergenceShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
+
+	velocityDivergenceShader->CopyBufferData("ExternalData");
+
+	velocityDivergenceShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[1].Get());
+	velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", velocityDivergenceMapUAV.Get());
+
+	velocityDivergenceShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
+
+	velocityDivergenceShader->DispatchByThreads(8, 8, 8);
+
+	//unbind textures	
+	velocityDivergenceShader->SetShaderResourceView("VelocityMap", 0);
+	velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", 0);
 
 	SwapBuffers();
 }
