@@ -19,7 +19,7 @@ public:
 	void Simulate(float deltaTime);
 private:
 	void SwapBuffers();
-	void CreateSRVandUAVTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav);
+	void CreateSRVandUAVTexture(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav);
 
 	int fluidSimGridRes = 64;
 	float invFluidSimGridRes = 1.0f / fluidSimGridRes;
@@ -27,7 +27,10 @@ private:
 	
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityMapSRVs[2];
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityMapUAVs[2];
+
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityDivergenceMapSRV;
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityDivergenceMapUAV;
+
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pressureMapSRVs[2];
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> pressureMapUAVs[2];
 

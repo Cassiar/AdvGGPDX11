@@ -27,6 +27,63 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 		XMStoreFloat4(&randomPixels[i], randomVec);
 	}
 
+	D3D11_TEXTURE3D_DESC desc = {};
+	desc.Width = fluidSimGridRes;
+	desc.Height = fluidSimGridRes;
+	desc.Depth = fluidSimGridRes;
+	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	desc.CPUAccessFlags = 0;
+	desc.MiscFlags = 0;
+	desc.MipLevels = 1;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+
+	//D3D11_TEXTURE3D_DESC td = {};
+	////td.ArraySize = 1;
+	//td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	//td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//td.MipLevels = 1;
+	//td.Height = fluidSimGridRes;
+	//td.Width = fluidSimGridRes;
+	////td.SampleDesc.Count = 1;
+	//td.Depth = fluidSimGridRes;
+
+	//init data for the texture
+	D3D11_SUBRESOURCE_DATA data = {};
+	data.pSysMem = randomPixels;
+	data.SysMemPitch = sizeof(XMFLOAT4) * fluidSimGridRes;
+	data.SysMemSlicePitch = sizeof(XMFLOAT4) * fluidSimGridRes * fluidSimGridRes;
+
+	//create the texture and fill with data
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityTex1;
+	device->CreateTexture3D(&desc, &data, velocityTex1.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityTex2;
+	device->CreateTexture3D(&desc, 0, velocityTex2.GetAddressOf());
+
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityDivergenceTex;
+	device->CreateTexture3D(&desc, 0, velocityDivergenceTex.GetAddressOf());
+
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> pressureTex1;
+	device->CreateTexture3D(&desc, 0, pressureTex1.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> pressureTex2;
+	device->CreateTexture3D(&desc, 0, pressureTex2.GetAddressOf());
+
+
+	device->CreateShaderResourceView(velocityTex1.Get(), 0, velocityMapSRVs[0].GetAddressOf());
+	device->CreateUnorderedAccessView(velocityTex1.Get(), 0, velocityMapUAVs[0].GetAddressOf());
+	device->CreateShaderResourceView(velocityTex2.Get(), 0, velocityMapSRVs[1].GetAddressOf());
+	device->CreateUnorderedAccessView(velocityTex2.Get(), 0, velocityMapUAVs[1].GetAddressOf());
+
+
+	device->CreateShaderResourceView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapSRV.GetAddressOf());
+	device->CreateUnorderedAccessView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapUAV.GetAddressOf());
+
+	device->CreateShaderResourceView(pressureTex1.Get(), 0, pressureMapSRVs[0].GetAddressOf());
+	device->CreateUnorderedAccessView(pressureTex1.Get(), 0, pressureMapUAVs[0].GetAddressOf());
+	device->CreateShaderResourceView(pressureTex2.Get(), 0, pressureMapSRVs[1].GetAddressOf());
+	device->CreateUnorderedAccessView(pressureTex2.Get(), 0, pressureMapUAVs[1].GetAddressOf());
+
+	//CreateSRVandUAVTexture(device, velocityMapSRVs[1], velocityMapUAVs[1]);
 
 	D3D11_SAMPLER_DESC bilinearSampDesc = {};
 	bilinearSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -69,7 +126,7 @@ void FluidField::Simulate(float deltaTime)
 	advectionShader->SetShaderResourceView("VelocityMap", 0);
 	advectionShader->SetUnorderedAccessView("UavOutputMap", 0);
 
-	velocityDivergenceShader->SetShader();
+	//velocityDivergenceShader->SetShader();
 
 	SwapBuffers();
 }
@@ -85,7 +142,7 @@ void FluidField::SwapBuffers() {
 	velocityMapUAVs[1] = uavTemp;
 }
 
-void FluidField::CreateSRVandUAVTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav) {
+void FluidField::CreateSRVandUAVTexture(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav) {
 
 	D3D11_TEXTURE3D_DESC desc = {};
 	desc.Width = fluidSimGridRes;
