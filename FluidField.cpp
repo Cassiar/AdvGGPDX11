@@ -57,6 +57,8 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	//create the texture and fill with data
 	Microsoft::WRL::ComPtr<ID3D11Texture3D> texture;
 	device->CreateTexture3D(&desc, &data, texture.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> blankTexture;
+	device->CreateTexture3D(&desc, &data, blankTexture.GetAddressOf());
 
 	//D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	//srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
@@ -86,7 +88,9 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	//uavDesc.Texture3D.WSize = -1;
 
 	device->CreateShaderResourceView(texture.Get(), 0, velocityMapSRVs[0].GetAddressOf());
-	device->CreateUnorderedAccessView(texture.Get(), 0, velocityMapUAVs[0].GetAddressOf());
+	device->CreateShaderResourceView(texture.Get(), 0, velocityMapSRVs[1].GetAddressOf());
+	device->CreateUnorderedAccessView(blankTexture.Get(), 0, velocityMapUAVs[0].GetAddressOf());
+	device->CreateUnorderedAccessView(blankTexture.Get(), 0, velocityMapUAVs[1].GetAddressOf());
 
 	D3D11_SAMPLER_DESC bilinearSampDesc = {};
 	bilinearSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -117,13 +121,28 @@ void FluidField::Simulate(float deltaTime)
 	advectionShader->CopyBufferData("ExternalData");
 
 	advectionShader->SetShaderResourceView("InputMap", velocityMapSRVs[0].Get());
-	//advectionShader->SetShaderResourceView("InputMap", velocityMapSRV.Get());
 	advectionShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[0].Get());
-	//advectionShader->SetShaderResourceView("VelocityMap", velocityMapSRV.Get());
 	advectionShader->SetUnorderedAccessView("UavOutputMap", velocityMapUAVs[1].Get());
 
 	advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
 
-
 	advectionShader->DispatchByThreads(8, 8, 8);
+
+	//unbind textures	
+	advectionShader->SetShaderResourceView("InputMap", 0);
+	advectionShader->SetShaderResourceView("VelocityMap", 0);
+	advectionShader->SetUnorderedAccessView("UavOutputMap", 0);
+
+	SwapBuffers();
+}
+
+void FluidField::SwapBuffers() {
+	//swap the buffers
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> temp = velocityMapSRVs[0];
+	velocityMapSRVs[0] = velocityMapSRVs[1];
+	velocityMapSRVs[1] = temp;
+
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uavTemp = velocityMapUAVs[0];
+	velocityMapUAVs[0] = velocityMapUAVs[1];
+	velocityMapUAVs[1] = uavTemp;
 }
