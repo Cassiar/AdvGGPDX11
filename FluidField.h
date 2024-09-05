@@ -18,7 +18,19 @@ public:
 
 	void Simulate(float deltaTime);
 private:
+	/// <summary>
+	/// Swap all buffers that require previous and current frame info
+	/// </summary>
 	void SwapBuffers();
+
+	/// <summary>
+	/// Swap just the pressure buffers for the pressure solver
+	/// </summary>
+	void SwapPressureBuffers();
+
+	/// <summary>
+	/// Helper fucntion to create paired SRVs and UAVs for fluid sim
+	/// </summary>
 	void CreateSRVandUAVTexture(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav);
 
 	int fluidSimGridRes = 64;
@@ -37,8 +49,8 @@ private:
 	Transform transform;
 	std::shared_ptr<SimpleComputeShader> advectionShader;
 	std::shared_ptr<SimpleComputeShader> velocityDivergenceShader;
-	std::shared_ptr<SimpleComputeShader> PressureSolverShader;
-	std::shared_ptr<SimpleComputeShader> PressureProjectionShader;
+	std::shared_ptr<SimpleComputeShader> pressureSolverShader;
+	std::shared_ptr<SimpleComputeShader> pressureProjectionShader;
 
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> bilinearSamplerOptions;
@@ -48,5 +60,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 
 	DirectX::XMFLOAT4* randomPixels;// = new DirectX::XMFLOAT4[fluidSimGridRes * fluidSimGridRes * fluidSimGridRes];
+	DirectX::XMFLOAT4* randomPixelsPressure;
 };
 
