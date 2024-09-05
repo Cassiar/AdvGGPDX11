@@ -58,6 +58,12 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	data.SysMemPitch = sizeof(XMFLOAT4) * fluidSimGridRes;
 	data.SysMemSlicePitch = sizeof(XMFLOAT4) * fluidSimGridRes * fluidSimGridRes;
 
+	D3D11_SUBRESOURCE_DATA pressureData = {};
+	pressureData.pSysMem = randomPixelsPressure;
+	pressureData.SysMemPitch = sizeof(XMFLOAT4) * fluidSimGridRes;
+	pressureData.SysMemSlicePitch = sizeof(XMFLOAT4) * fluidSimGridRes * fluidSimGridRes;
+
+
 	//create the texture and fill with data
 	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityTex1;
 	device->CreateTexture3D(&desc, &data, velocityTex1.GetAddressOf());
@@ -68,7 +74,7 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	device->CreateTexture3D(&desc, 0, velocityDivergenceTex.GetAddressOf());
 
 	Microsoft::WRL::ComPtr<ID3D11Texture3D> pressureTex1;
-	device->CreateTexture3D(&desc, 0, pressureTex1.GetAddressOf());
+	device->CreateTexture3D(&desc, &pressureData, pressureTex1.GetAddressOf());
 	Microsoft::WRL::ComPtr<ID3D11Texture3D> pressureTex2;
 	device->CreateTexture3D(&desc, 0, pressureTex2.GetAddressOf());
 
