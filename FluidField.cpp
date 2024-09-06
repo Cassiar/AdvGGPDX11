@@ -25,17 +25,17 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	randomPixelsPressure = new XMFLOAT4[totalPixels];
 	for (int i = 0; i < 512; i++) {
 		XMVECTOR randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
-		XMStoreFloat4(&randomPixels[i], randomVec);
+		XMStoreFloat4(&randomPixels[i], XMVector3Normalize(randomVec));
 
 		randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
-		XMStoreFloat4(&randomPixelsPressure[i], randomVec);
+		XMStoreFloat4(&randomPixelsPressure[i], XMVector3Normalize(randomVec));
 	}
 
 	D3D11_TEXTURE3D_DESC desc = {};
 	desc.Width = fluidSimGridRes;
 	desc.Height = fluidSimGridRes;
 	desc.Depth = fluidSimGridRes;
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	desc.CPUAccessFlags = 0;
 	desc.MiscFlags = 0;
