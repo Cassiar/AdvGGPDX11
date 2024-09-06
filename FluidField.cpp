@@ -23,7 +23,7 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	const int totalPixels = textureSize * textureSize *textureSize;
 	randomPixels = new XMFLOAT4[totalPixels];
 	randomPixelsPressure = new XMFLOAT4[totalPixels];
-	for (int i = 0; i < 512; i++) {
+	for (int i = 0; i < totalPixels; i++) {
 		XMVECTOR randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
 		XMStoreFloat4(&randomPixels[i], XMVector3Normalize(randomVec));
 

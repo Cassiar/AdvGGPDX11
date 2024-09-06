@@ -31,7 +31,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	float3 gradP = 0.5 * float3(pRight - pLeft, pTop - pBottom, pFront - pBack);
 	// Project the velocity onto its divergence-free component by    
 	// subtracting the gradient of pressure.    
-	float3 vOld = VelocityMap.SampleLevel(PointSampler, coords, 0.0f);
+	float3 vOld = VelocityMap[DTid];// VelocityMap.SampleLevel(PointSampler, coords, 0.0f);
 	float3 vNew = vOld - gradP;
 	UavOutputMap[DTid] = float4(vNew, 0);
 }
