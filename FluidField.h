@@ -40,6 +40,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityMapSRVs[2];
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityMapUAVs[2];
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> densityMapSRVs[2];
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> densityMapUAVs[2];
+
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityDivergenceMapSRV;
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityDivergenceMapUAV;
 
@@ -61,5 +64,6 @@ private:
 
 	DirectX::XMFLOAT4* randomPixels;// = new DirectX::XMFLOAT4[fluidSimGridRes * fluidSimGridRes * fluidSimGridRes];
 	DirectX::XMFLOAT4* randomPixelsPressure;
+	DirectX::XMFLOAT4* randomPixelsDensity;
 };
 

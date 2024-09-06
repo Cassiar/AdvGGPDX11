@@ -23,12 +23,16 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	const int totalPixels = textureSize * textureSize *textureSize;
 	randomPixels = new XMFLOAT4[totalPixels];
 	randomPixelsPressure = new XMFLOAT4[totalPixels];
+	randomPixelsDensity = new XMFLOAT4[totalPixels];
 	for (int i = 0; i < totalPixels; i++) {
 		XMVECTOR randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
 		XMStoreFloat4(&randomPixels[i], XMVector3Normalize(randomVec));
 
 		randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
 		XMStoreFloat4(&randomPixelsPressure[i], XMVector3Normalize(randomVec));
+
+		randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
+		XMStoreFloat4(&randomPixelsDensity[i], XMVector3Normalize(randomVec));
 	}
 
 	D3D11_TEXTURE3D_DESC desc = {};
@@ -62,13 +66,22 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	pressureData.pSysMem = randomPixelsPressure;
 	pressureData.SysMemPitch = sizeof(XMFLOAT4) * fluidSimGridRes;
 	pressureData.SysMemSlicePitch = sizeof(XMFLOAT4) * fluidSimGridRes * fluidSimGridRes;
-
+	
+	D3D11_SUBRESOURCE_DATA densityData = {};
+	densityData.pSysMem = randomPixelsDensity;
+	densityData.SysMemPitch = sizeof(XMFLOAT4) * fluidSimGridRes;
+	densityData.SysMemSlicePitch = sizeof(XMFLOAT4) * fluidSimGridRes * fluidSimGridRes;
 
 	//create the texture and fill with data
 	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityTex1;
 	device->CreateTexture3D(&desc, &data, velocityTex1.GetAddressOf());
 	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityTex2;
 	device->CreateTexture3D(&desc, 0, velocityTex2.GetAddressOf());
+
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> densityTex1;
+	device->CreateTexture3D(&desc, &densityData, densityTex1.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> densityTex2;
+	device->CreateTexture3D(&desc, 0, densityTex2.GetAddressOf());
 
 	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityDivergenceTex;
 	device->CreateTexture3D(&desc, 0, velocityDivergenceTex.GetAddressOf());
@@ -84,6 +97,10 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	device->CreateShaderResourceView(velocityTex2.Get(), 0, velocityMapSRVs[1].GetAddressOf());
 	device->CreateUnorderedAccessView(velocityTex2.Get(), 0, velocityMapUAVs[1].GetAddressOf());
 
+	device->CreateShaderResourceView(densityTex1.Get(), 0, densityMapSRVs[0].GetAddressOf());
+	device->CreateUnorderedAccessView(densityTex1.Get(), 0, densityMapUAVs[0].GetAddressOf());
+	device->CreateShaderResourceView(densityTex2.Get(), 0, densityMapSRVs[1].GetAddressOf());
+	device->CreateUnorderedAccessView(densityTex2.Get(), 0, densityMapUAVs[1].GetAddressOf());
 
 	device->CreateShaderResourceView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapSRV.GetAddressOf());
 	device->CreateUnorderedAccessView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapUAV.GetAddressOf());
@@ -116,8 +133,9 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 
 FluidField::~FluidField()
 {
-	if(randomPixels) free(randomPixels);
-	if(randomPixelsPressure) free(randomPixelsPressure);
+	if (randomPixels) free(randomPixels);
+	if (randomPixelsPressure) free(randomPixelsPressure);
+	if (randomPixelsDensity) free(randomPixelsDensity);
 }
 
 Transform* FluidField::GetTransform()
@@ -127,43 +145,70 @@ Transform* FluidField::GetTransform()
 
 void FluidField::Simulate(float deltaTime)
 {
-	advectionShader->SetShader();
-	advectionShader->SetFloat("deltaTime", deltaTime);
-	advectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
+	//velocity advection
+	{
+		advectionShader->SetShader();
+		advectionShader->SetFloat("deltaTime", deltaTime);
+		advectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
 
-	advectionShader->CopyBufferData("ExternalData");
+		advectionShader->CopyBufferData("ExternalData");
 
-	advectionShader->SetShaderResourceView("InputMap", velocityMapSRVs[0].Get());
-	advectionShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[0].Get());
-	advectionShader->SetUnorderedAccessView("UavOutputMap", velocityMapUAVs[1].Get());
+		advectionShader->SetShaderResourceView("InputMap", velocityMapSRVs[0].Get());
+		advectionShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[0].Get());
+		advectionShader->SetUnorderedAccessView("UavOutputMap", velocityMapUAVs[1].Get());
 
-	advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
+		advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
 
-	advectionShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
+		advectionShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
 
-	//unbind textures	
-	advectionShader->SetShaderResourceView("InputMap", 0);
-	advectionShader->SetShaderResourceView("VelocityMap", 0);
-	advectionShader->SetUnorderedAccessView("UavOutputMap", 0);
+		//unbind textures	
+		advectionShader->SetShaderResourceView("InputMap", 0);
+		advectionShader->SetShaderResourceView("VelocityMap", 0);
+		advectionShader->SetUnorderedAccessView("UavOutputMap", 0);
+	}
 
+	//density advection
+	{
+		advectionShader->SetShader();
+		advectionShader->SetFloat("deltaTime", deltaTime);
+		advectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
 
-	velocityDivergenceShader->SetShader();
-	velocityDivergenceShader->SetFloat("deltaTime", deltaTime);
-	velocityDivergenceShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
-	velocityDivergenceShader->SetFloat("gridRes", fluidSimGridRes);
+		advectionShader->CopyBufferData("ExternalData");
 
-	velocityDivergenceShader->CopyBufferData("ExternalData");
+		advectionShader->SetShaderResourceView("InputMap", densityMapSRVs[0].Get());
+		advectionShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[0].Get());
+		advectionShader->SetUnorderedAccessView("UavOutputMap", densityMapUAVs[1].Get());
 
-	velocityDivergenceShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[1].Get());
-	velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", velocityDivergenceMapUAV.Get());
+		advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
 
-	velocityDivergenceShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
+		advectionShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
 
-	velocityDivergenceShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
+		//unbind textures	
+		advectionShader->SetShaderResourceView("InputMap", 0);
+		advectionShader->SetShaderResourceView("VelocityMap", 0);
+		advectionShader->SetUnorderedAccessView("UavOutputMap", 0);
+	}
 
-	//unbind textures	
-	velocityDivergenceShader->SetShaderResourceView("VelocityMap", 0);
-	velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", 0);
+	//velocity divergence
+	{
+		velocityDivergenceShader->SetShader();
+		velocityDivergenceShader->SetFloat("deltaTime", deltaTime);
+		velocityDivergenceShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
+		velocityDivergenceShader->SetFloat("gridRes", fluidSimGridRes);
+
+		velocityDivergenceShader->CopyBufferData("ExternalData");
+
+		velocityDivergenceShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[1].Get());
+		velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", velocityDivergenceMapUAV.Get());
+
+		velocityDivergenceShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
+
+		velocityDivergenceShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
+
+		//unbind textures	
+		velocityDivergenceShader->SetShaderResourceView("VelocityMap", 0);
+		velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", 0);
+	}
 
 	//pressure solver, run like 20 times
 	for (int i = 0; i < 20; i++) {
@@ -194,28 +239,36 @@ void FluidField::Simulate(float deltaTime)
 	}
 
 	//pressure projection
-	pressureProjectionShader->SetShader();
+	{
+		pressureProjectionShader->SetShader();
 
-	pressureProjectionShader->SetFloat("deltaTime", deltaTime);
-	pressureProjectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
-	pressureProjectionShader->SetFloat("gridRes", fluidSimGridRes);
+		pressureProjectionShader->SetFloat("deltaTime", deltaTime);
+		pressureProjectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
+		pressureProjectionShader->SetFloat("gridRes", fluidSimGridRes);
 
-	pressureProjectionShader->CopyBufferData("ExternalData");
+		pressureProjectionShader->CopyBufferData("ExternalData");
 
-	pressureProjectionShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[1].Get());
-	pressureProjectionShader->SetShaderResourceView("PressureMap", pressureMapSRVs[0].Get());
-	pressureProjectionShader->SetUnorderedAccessView("UavOutputMap", velocityMapUAVs[0].Get());
+		pressureProjectionShader->SetShaderResourceView("VelocityMap", velocityMapSRVs[1].Get());
+		pressureProjectionShader->SetShaderResourceView("PressureMap", pressureMapSRVs[0].Get());
+		pressureProjectionShader->SetUnorderedAccessView("UavOutputMap", velocityMapUAVs[0].Get());
 
-	pressureProjectionShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
+		pressureProjectionShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
 
-	//dispatch and unbind
-	pressureProjectionShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
+		//dispatch and unbind
+		pressureProjectionShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
 
-	pressureProjectionShader->SetShaderResourceView("VelocityMap", 0);
-	pressureProjectionShader->SetShaderResourceView("PressureMap", 0);
-	pressureProjectionShader->SetUnorderedAccessView("UavOutputMap", 0);
-
+		pressureProjectionShader->SetShaderResourceView("VelocityMap", 0);
+		pressureProjectionShader->SetShaderResourceView("PressureMap", 0);
+		pressureProjectionShader->SetUnorderedAccessView("UavOutputMap", 0);
+	}
 	//SwapBuffers();
+	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> temp = densityMapSRVs[0];
+	//densityMapSRVs[0] = densityMapSRVs[1];
+	//densityMapSRVs[1] = temp;
+	//
+	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uavTemp = densityMapUAVs[0];
+	//densityMapUAVs[0] = densityMapUAVs[1];
+	//densityMapUAVs[1] = uavTemp;
 }
 
 void FluidField::SwapBuffers() {
@@ -227,6 +280,15 @@ void FluidField::SwapBuffers() {
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uavTemp = velocityMapUAVs[0];
 	velocityMapUAVs[0] = velocityMapUAVs[1];
 	velocityMapUAVs[1] = uavTemp;
+
+	//swap the buffers
+	temp = densityMapSRVs[0];
+	densityMapSRVs[0] = densityMapSRVs[1];
+	densityMapSRVs[1] = temp;
+
+	uavTemp = densityMapUAVs[0];
+	densityMapUAVs[0] = densityMapUAVs[1];
+	densityMapUAVs[1] = uavTemp;
 }
 
 void FluidField::SwapPressureBuffers() {
