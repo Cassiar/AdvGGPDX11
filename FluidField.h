@@ -18,6 +18,11 @@ public:
 
 	void Simulate(float deltaTime);
 private:
+	struct VolumeResource {
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
+		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav;
+	};
+
 	/// <summary>
 	/// Swap all buffers that require previous and current frame info
 	/// </summary>
@@ -31,14 +36,15 @@ private:
 	/// <summary>
 	/// Helper fucntion to create paired SRVs and UAVs for fluid sim
 	/// </summary>
-	void CreateSRVandUAVTexture(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav);
+	VolumeResource CreateSRVandUAVTexture(void* initialData);// Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav);
 
 	int fluidSimGridRes = 64;
 	float invFluidSimGridRes = 1.0f / fluidSimGridRes;
 	//int groupSize = 8;//8*8*8 =512 the grid res
 	
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityMapSRVs[2];
-	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityMapUAVs[2];
+	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityMapSRVs[2]; 
+	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityMapUAVs[2];
+	VolumeResource velocityMap[2];
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> densityMapSRVs[2];
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> densityMapUAVs[2];
