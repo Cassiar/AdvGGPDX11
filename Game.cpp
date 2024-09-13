@@ -137,6 +137,9 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadAssetsAndCreateEntities()
 {
+	//fluild field object
+	fluidField = std::make_shared<FluidField>(device, context);
+
 	// Load shaders using our succinct LoadShader() macro
 	std::shared_ptr<SimpleVertexShader> vertexShader	= LoadShader(SimpleVertexShader, L"VertexShader.cso");
 	std::shared_ptr<SimplePixelShader> pixelShaderPBR	= LoadShader(SimplePixelShader, L"PixelShaderPBR.cso");
@@ -365,6 +368,14 @@ void Game::LoadAssetsAndCreateEntities()
 	plastic->AddTextureSRV("RoughnessMap", grey);
 	plastic->AddTextureSRV("MetalMap", black);
 
+	std::shared_ptr<Material> fluidTest = std::make_shared<Material>(pixelShaderPBR, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
+	fluidTest->AddSampler("BasicSampler", samplerOptions);
+	fluidTest->AddSampler("ClampSampler", clampSamplerOptions);
+	fluidTest->AddTextureSRV("Albedo", *fluidField->GetDensityMap());
+	fluidTest->AddTextureSRV("NormalMap", flatNormal);
+	fluidTest->AddTextureSRV("RoughnessMap", grey);
+	fluidTest->AddTextureSRV("MetalMap", black);
+
 	// === Create PBR IBL tests ========================================
 	std::shared_ptr<GameEntity> noRoughSphere = std::make_shared<GameEntity>(sphereMesh, noRoughMetal);
 	noRoughSphere->GetTransform()->SetPosition(-6, 6, 0);
@@ -426,7 +437,8 @@ void Game::LoadAssetsAndCreateEntities()
 	entities.push_back(woodSpherePBR);
 
 	//flat plane to help show ssao, goes through the pbr sphere
-	std::shared_ptr<GameEntity> plane = std::make_shared<GameEntity>(cubeMesh, paintMatPBR);
+	//std::shared_ptr<GameEntity> plane = std::make_shared<GameEntity>(cubeMesh, paintMatPBR);
+	std::shared_ptr<GameEntity> plane = std::make_shared<GameEntity>(cubeMesh, fluidTest);
 	plane->GetTransform()->SetScale(16, 0.1f, 4);
 	plane->GetTransform()->MoveRelative(0, 2, 0);
 
@@ -436,9 +448,6 @@ void Game::LoadAssetsAndCreateEntities()
 	lightMesh = sphereMesh;
 	lightVS = vertexShader;
 	lightPS = solidColorPS;
-
-	//fluild field object
-	fluidField = std::make_shared<FluidField>(device, context);
 }
 
 

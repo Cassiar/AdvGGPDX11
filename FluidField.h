@@ -17,6 +17,9 @@ public:
 	Transform* GetTransform();
 
 	void Simulate(float deltaTime);
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* GetDensityMap() {
+		return &densityMap[0].srv;
+	};
 private:
 	struct VolumeResource {
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
@@ -42,20 +45,12 @@ private:
 	float invFluidSimGridRes = 1.0f / fluidSimGridRes;
 	//int groupSize = 8;//8*8*8 =512 the grid res
 	
-	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityMapSRVs[2]; 
-	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityMapUAVs[2];
 	VolumeResource velocityMap[2];
 
-	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> densityMapSRVs[2];
-	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> densityMapUAVs[2];
 	VolumeResource densityMap[2];
 
-	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityDivergenceMapSRV;
-	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityDivergenceMapUAV;
 	VolumeResource velocityDivergenceMap;
 
-	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pressureMapSRVs[2];
-	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> pressureMapUAVs[2];
 	VolumeResource pressureMap[2];
 
 	Transform transform;

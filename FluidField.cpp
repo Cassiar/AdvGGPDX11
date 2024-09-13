@@ -46,16 +46,6 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	desc.MipLevels = 1;
 	desc.Usage = D3D11_USAGE_DEFAULT;
 
-	//D3D11_TEXTURE3D_DESC td = {};
-	////td.ArraySize = 1;
-	//td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	//td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	//td.MipLevels = 1;
-	//td.Height = fluidSimGridRes;
-	//td.Width = fluidSimGridRes;
-	////td.SampleDesc.Count = 1;
-	//td.Depth = fluidSimGridRes;
-
 	//init data for the texture
 	D3D11_SUBRESOURCE_DATA data = {};
 	data.pSysMem = randomPixels;
@@ -92,32 +82,16 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	device->CreateTexture3D(&desc, 0, pressureTex2.GetAddressOf());
 
 
-	//device->CreateShaderResourceView(velocityTex1.Get(), 0, velocityMap[0].srv.GetAddressOf());
-	//device->CreateUnorderedAccessView(velocityTex1.Get(), 0, velocityMap[0].uav.GetAddressOf());
-	//device->CreateShaderResourceView(velocityTex2.Get(), 0, velocityMapSRVs[1].GetAddressOf());
-	//device->CreateUnorderedAccessView(velocityTex2.Get(), 0, velocityMapUAVs[1].GetAddressOf());
 	velocityMap[0] = CreateSRVandUAVTexture(randomPixels);
 	velocityMap[1] = CreateSRVandUAVTexture(0);
 
-	//device->CreateShaderResourceView(densityTex1.Get(), 0, densityMapSRVs[0].GetAddressOf());
-	//device->CreateUnorderedAccessView(densityTex1.Get(), 0, densityMapUAVs[0].GetAddressOf());
-	//device->CreateShaderResourceView(densityTex2.Get(), 0, densityMapSRVs[1].GetAddressOf());
-	//device->CreateUnorderedAccessView(densityTex2.Get(), 0, densityMapUAVs[1].GetAddressOf());
 	densityMap[0] = CreateSRVandUAVTexture(randomPixelsDensity);
 	densityMap[1] = CreateSRVandUAVTexture(0);
 
-	//device->CreateShaderResourceView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapSRV.GetAddressOf());
-	//device->CreateUnorderedAccessView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapUAV.GetAddressOf());
 	velocityDivergenceMap = CreateSRVandUAVTexture(0);
 
-	//device->CreateShaderResourceView(pressureTex1.Get(), 0, pressureMapSRVs[0].GetAddressOf());
-	//device->CreateUnorderedAccessView(pressureTex1.Get(), 0, pressureMapUAVs[0].GetAddressOf());
-	//device->CreateShaderResourceView(pressureTex2.Get(), 0, pressureMapSRVs[1].GetAddressOf());
-	//device->CreateUnorderedAccessView(pressureTex2.Get(), 0, pressureMapUAVs[1].GetAddressOf());
 	pressureMap[0] = CreateSRVandUAVTexture(randomPixelsPressure);
 	pressureMap[1] = CreateSRVandUAVTexture(0);
-
-	//CreateSRVandUAVTexture(device, velocityMapSRVs[1], velocityMapUAVs[1]);
 
 	D3D11_SAMPLER_DESC bilinearSampDesc = {};
 	bilinearSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
