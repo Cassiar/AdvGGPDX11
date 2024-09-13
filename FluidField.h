@@ -26,7 +26,7 @@ private:
 	/// <summary>
 	/// Swap all buffers that require previous and current frame info
 	/// </summary>
-	void SwapBuffers();
+	void SwapBuffers(VolumeResource vr[2]);
 
 	/// <summary>
 	/// Swap just the pressure buffers for the pressure solver
@@ -46,14 +46,17 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityMapUAVs[2];
 	VolumeResource velocityMap[2];
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> densityMapSRVs[2];
-	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> densityMapUAVs[2];
+	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> densityMapSRVs[2];
+	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> densityMapUAVs[2];
+	VolumeResource densityMap[2];
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityDivergenceMapSRV;
-	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityDivergenceMapUAV;
+	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> velocityDivergenceMapSRV;
+	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> velocityDivergenceMapUAV;
+	VolumeResource velocityDivergenceMap;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pressureMapSRVs[2];
-	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> pressureMapUAVs[2];
+	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pressureMapSRVs[2];
+	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> pressureMapUAVs[2];
+	VolumeResource pressureMap[2];
 
 	Transform transform;
 	std::shared_ptr<SimpleComputeShader> advectionShader;

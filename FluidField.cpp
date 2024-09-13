@@ -92,25 +92,30 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	device->CreateTexture3D(&desc, 0, pressureTex2.GetAddressOf());
 
 
-	device->CreateShaderResourceView(velocityTex1.Get(), 0, velocityMap[0].srv.GetAddressOf());
-	device->CreateUnorderedAccessView(velocityTex1.Get(), 0, velocityMap[0].uav.GetAddressOf());
+	//device->CreateShaderResourceView(velocityTex1.Get(), 0, velocityMap[0].srv.GetAddressOf());
+	//device->CreateUnorderedAccessView(velocityTex1.Get(), 0, velocityMap[0].uav.GetAddressOf());
 	//device->CreateShaderResourceView(velocityTex2.Get(), 0, velocityMapSRVs[1].GetAddressOf());
 	//device->CreateUnorderedAccessView(velocityTex2.Get(), 0, velocityMapUAVs[1].GetAddressOf());
-	//velocityMap[0] = CreateSRVandUAVTexture(&data);
+	velocityMap[0] = CreateSRVandUAVTexture(randomPixels);
 	velocityMap[1] = CreateSRVandUAVTexture(0);
 
-	device->CreateShaderResourceView(densityTex1.Get(), 0, densityMapSRVs[0].GetAddressOf());
-	device->CreateUnorderedAccessView(densityTex1.Get(), 0, densityMapUAVs[0].GetAddressOf());
-	device->CreateShaderResourceView(densityTex2.Get(), 0, densityMapSRVs[1].GetAddressOf());
-	device->CreateUnorderedAccessView(densityTex2.Get(), 0, densityMapUAVs[1].GetAddressOf());
+	//device->CreateShaderResourceView(densityTex1.Get(), 0, densityMapSRVs[0].GetAddressOf());
+	//device->CreateUnorderedAccessView(densityTex1.Get(), 0, densityMapUAVs[0].GetAddressOf());
+	//device->CreateShaderResourceView(densityTex2.Get(), 0, densityMapSRVs[1].GetAddressOf());
+	//device->CreateUnorderedAccessView(densityTex2.Get(), 0, densityMapUAVs[1].GetAddressOf());
+	densityMap[0] = CreateSRVandUAVTexture(randomPixelsDensity);
+	densityMap[1] = CreateSRVandUAVTexture(0);
 
-	device->CreateShaderResourceView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapSRV.GetAddressOf());
-	device->CreateUnorderedAccessView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapUAV.GetAddressOf());
+	//device->CreateShaderResourceView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapSRV.GetAddressOf());
+	//device->CreateUnorderedAccessView(velocityDivergenceTex.Get(), 0, velocityDivergenceMapUAV.GetAddressOf());
+	velocityDivergenceMap = CreateSRVandUAVTexture(0);
 
-	device->CreateShaderResourceView(pressureTex1.Get(), 0, pressureMapSRVs[0].GetAddressOf());
-	device->CreateUnorderedAccessView(pressureTex1.Get(), 0, pressureMapUAVs[0].GetAddressOf());
-	device->CreateShaderResourceView(pressureTex2.Get(), 0, pressureMapSRVs[1].GetAddressOf());
-	device->CreateUnorderedAccessView(pressureTex2.Get(), 0, pressureMapUAVs[1].GetAddressOf());
+	//device->CreateShaderResourceView(pressureTex1.Get(), 0, pressureMapSRVs[0].GetAddressOf());
+	//device->CreateUnorderedAccessView(pressureTex1.Get(), 0, pressureMapUAVs[0].GetAddressOf());
+	//device->CreateShaderResourceView(pressureTex2.Get(), 0, pressureMapSRVs[1].GetAddressOf());
+	//device->CreateUnorderedAccessView(pressureTex2.Get(), 0, pressureMapUAVs[1].GetAddressOf());
+	pressureMap[0] = CreateSRVandUAVTexture(randomPixelsPressure);
+	pressureMap[1] = CreateSRVandUAVTexture(0);
 
 	//CreateSRVandUAVTexture(device, velocityMapSRVs[1], velocityMapUAVs[1]);
 
@@ -177,9 +182,9 @@ void FluidField::Simulate(float deltaTime)
 
 		advectionShader->CopyBufferData("ExternalData");
 
-		advectionShader->SetShaderResourceView("InputMap", densityMapSRVs[0].Get());
+		advectionShader->SetShaderResourceView("InputMap", densityMap[0].srv.Get());
 		advectionShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
-		advectionShader->SetUnorderedAccessView("UavOutputMap", densityMapUAVs[1].Get());
+		advectionShader->SetUnorderedAccessView("UavOutputMap", densityMap[1].uav.Get());
 
 		advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
 
@@ -201,7 +206,7 @@ void FluidField::Simulate(float deltaTime)
 		velocityDivergenceShader->CopyBufferData("ExternalData");
 
 		velocityDivergenceShader->SetShaderResourceView("VelocityMap", velocityMap[1].srv.Get());
-		velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", velocityDivergenceMapUAV.Get());
+		velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", velocityDivergenceMap.uav.Get());
 
 		velocityDivergenceShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
 
@@ -222,9 +227,9 @@ void FluidField::Simulate(float deltaTime)
 
 		pressureSolverShader->CopyBufferData("ExternalData");
 
-		pressureSolverShader->SetShaderResourceView("VelocityDivergenceMap", velocityDivergenceMapSRV.Get());
-		pressureSolverShader->SetShaderResourceView("PressureMap", pressureMapSRVs[0].Get());
-		pressureSolverShader->SetUnorderedAccessView("UavOutputMap", pressureMapUAVs[1].Get());
+		pressureSolverShader->SetShaderResourceView("VelocityDivergenceMap", velocityDivergenceMap.srv.Get());
+		pressureSolverShader->SetShaderResourceView("PressureMap", pressureMap[0].srv.Get());
+		pressureSolverShader->SetUnorderedAccessView("UavOutputMap", pressureMap[1].uav.Get());
 
 		pressureSolverShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
 		pressureSolverShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
@@ -237,7 +242,7 @@ void FluidField::Simulate(float deltaTime)
 		pressureSolverShader->SetUnorderedAccessView("UavOutputMap", 0);
 
 		//swap pressure buffers for next solver pass
-		SwapPressureBuffers();
+		SwapBuffers(pressureMap);
 	}
 
 	//pressure projection
@@ -251,7 +256,7 @@ void FluidField::Simulate(float deltaTime)
 		pressureProjectionShader->CopyBufferData("ExternalData");
 
 		pressureProjectionShader->SetShaderResourceView("VelocityMap", velocityMap[1].srv.Get());
-		pressureProjectionShader->SetShaderResourceView("PressureMap", pressureMapSRVs[0].Get());
+		pressureProjectionShader->SetShaderResourceView("PressureMap", pressureMap[0].srv.Get());
 		pressureProjectionShader->SetUnorderedAccessView("UavOutputMap", velocityMap[0].uav.Get());
 
 		pressureProjectionShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
@@ -273,39 +278,22 @@ void FluidField::Simulate(float deltaTime)
 	//densityMapUAVs[1] = uavTemp;
 }
 
-void FluidField::SwapBuffers() {
+void FluidField::SwapBuffers(VolumeResource vr[2]) {
 	//swap the buffers
-	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> temp = velocityMapSRVs[0];
-	//velocityMapSRVs[0] = velocityMapSRVs[1];
-	//velocityMapSRVs[1] = temp;
-
-	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uavTemp = velocityMapUAVs[0];
-	//velocityMapUAVs[0] = velocityMapUAVs[1];
-	//velocityMapUAVs[1] = uavTemp;
-
-	VolumeResource temp = velocityMap[0];
-	velocityMap[0] = velocityMap[1];
-	velocityMap[1] = temp;
-
-	//swap the buffers
-	//temp = densityMapSRVs[0];
-	//densityMapSRVs[0] = densityMapSRVs[1];
-	//densityMapSRVs[1] = temp;
-
-	//uavTemp = densityMapUAVs[0];
-	//densityMapUAVs[0] = densityMapUAVs[1];
-	//densityMapUAVs[1] = uavTemp;
+	VolumeResource temp = vr[0];
+	vr[0] = vr[1];
+	vr[1] = temp;
 }
 
 void FluidField::SwapPressureBuffers() {
 	//swap the buffers
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> temp = pressureMapSRVs[0];
-	pressureMapSRVs[0] = pressureMapSRVs[1];
-	pressureMapSRVs[1] = temp;
-
-	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uavTemp = pressureMapUAVs[0];
-	pressureMapUAVs[0] = pressureMapUAVs[1];
-	pressureMapUAVs[1] = uavTemp;
+	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> temp = pressureMapSRVs[0];
+	//pressureMapSRVs[0] = pressureMapSRVs[1];
+	//pressureMapSRVs[1] = temp;
+	//
+	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uavTemp = pressureMapUAVs[0];
+	//pressureMapUAVs[0] = pressureMapUAVs[1];
+	//pressureMapUAVs[1] = uavTemp;
 }
 
 FluidField::VolumeResource FluidField::CreateSRVandUAVTexture(void* initialData) {
