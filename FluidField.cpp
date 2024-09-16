@@ -93,6 +93,13 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	pressureMap[0] = CreateSRVandUAVTexture(randomPixelsPressure);
 	pressureMap[1] = CreateSRVandUAVTexture(0);
 
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	device->CreateSamplerState(&sampDesc, linearClampSamplerOptions.GetAddressOf());
+
 	D3D11_SAMPLER_DESC bilinearSampDesc = {};
 	bilinearSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	bilinearSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -110,6 +117,20 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	pointSampDesc.MaxAnisotropy = 16;
 	pointSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&pointSampDesc, pointSamplerOptions.GetAddressOf());
+
+	D3D11_DEPTH_STENCIL_DESC depthDesc = {};
+	depthDesc.DepthEnable = true;
+	depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	depthDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	device->CreateDepthStencilState(&depthDesc, depthState.GetAddressOf());
+
+	D3D11_RASTERIZER_DESC rasterDesc = {};
+	rasterDesc.CullMode = D3D11_CULL_FRONT;
+	rasterDesc.FillMode = D3D11_FILL_SOLID;
+	rasterDesc.DepthClipEnable = true;
+	device->CreateRasterizerState(&rasterDesc, rasterState.GetAddressOf());
+
+	cube = std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device);
 }
 
 FluidField::~FluidField()
@@ -250,6 +271,58 @@ void FluidField::Simulate(float deltaTime)
 	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uavTemp = densityMapUAVs[0];
 	//densityMapUAVs[0] = densityMapUAVs[1];
 	//densityMapUAVs[1] = uavTemp;
+}
+
+void FluidField::RenderFluid(Camera* camera) {
+	context->OMSetDepthStencilState(depthState.Get(), 0);
+	context->OMSetBlendState(blendState.Get(), 0, 0xFFFFFFFF);
+	context->RSSetState(rasterState.Get());
+
+	//get the smallest dimension and use for scaling
+	//which for now is the same since we have a perfect cube
+	float smallestDimension = fluidSimGridRes;
+	XMFLOAT3 scale = { fluidSimGridRes, fluidSimGridRes, fluidSimGridRes };
+
+	//cube location
+	XMFLOAT3 translation(0, 0, 0);
+
+	volumePS->SetShader();
+	volumeVS->SetShader();
+
+	//world mat for vertex shader
+	XMMATRIX worldMat = XMMatrixScaling(scale.x, scale.y, scale.z) *
+		XMMatrixTranslation(translation.x, translation.y, translation.z);
+
+	XMFLOAT4X4 world, invWorld;
+	XMStoreFloat4x4(&world, worldMat);
+	XMStoreFloat4x4(&invWorld, XMMatrixInverse(0, worldMat));
+	volumeVS->SetMatrix4x4("world", world);
+	volumeVS->SetMatrix4x4("view", camera->GetView());
+	volumeVS->SetMatrix4x4("projection", camera->GetProjection());
+	volumeVS->CopyAllBufferData();
+	//should be linear clamp
+	volumeVS->SetSamplerState("SamplerLinearClamp", linearClampSamplerOptions);
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = densityMap[0].srv;
+	//this where code to switch which srv is being displayed would go
+
+	volumePS->SetShaderResourceView("volumeTexture", srv);
+
+	volumePS->SetMatrix4x4("invWorld", invWorld);
+	volumePS->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
+	volumePS->SetFloat3("fluidColor", fluidColor);
+	volumePS->SetInt("renderMode", -1);
+	volumePS->SetInt("raymarchSamples", raymarchSamples);
+	volumePS->CopyAllBufferData();
+
+	//cube mesh to render fluid within
+	cube->SetBufferAndDraw(context);
+
+
+	// Reset render states
+	context->OMSetDepthStencilState(0, 0);
+	context->OMSetBlendState(0, 0, 0xFFFFFFFF);
+	context->RSSetState(0);
 }
 
 void FluidField::SwapBuffers(VolumeResource vr[2]) {

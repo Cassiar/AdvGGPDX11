@@ -7,6 +7,8 @@
 
 #include "Transform.h"
 #include "SimpleShader.h"
+#include "Camera.h"
+#include "Mesh.h"
 
 class FluidField
 {
@@ -20,6 +22,8 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* GetDensityMap() {
 		return &densityMap[0].srv;
 	};
+
+	void RenderFluid(Camera* camera);
 private:
 	struct VolumeResource {
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
@@ -44,7 +48,17 @@ private:
 	int fluidSimGridRes = 64;
 	float invFluidSimGridRes = 1.0f / fluidSimGridRes;
 	//int groupSize = 8;//8*8*8 =512 the grid res
-	
+
+	DirectX::XMFLOAT4* randomPixels;// = new DirectX::XMFLOAT4[fluidSimGridRes * fluidSimGridRes * fluidSimGridRes];
+	DirectX::XMFLOAT4* randomPixelsPressure;
+	DirectX::XMFLOAT4* randomPixelsDensity;
+
+	DirectX::XMFLOAT3 fluidColor = { 1.0f, 1.0f, 1.0f };
+	int raymarchSamples = 128;
+	Transform transform;
+
+	std::shared_ptr<Mesh> cube;
+
 	VolumeResource velocityMap[2];
 
 	VolumeResource densityMap[2];
@@ -53,21 +67,25 @@ private:
 
 	VolumeResource pressureMap[2];
 
-	Transform transform;
 	std::shared_ptr<SimpleComputeShader> advectionShader;
 	std::shared_ptr<SimpleComputeShader> velocityDivergenceShader;
 	std::shared_ptr<SimpleComputeShader> pressureSolverShader;
 	std::shared_ptr<SimpleComputeShader> pressureProjectionShader;
 
+	//shaders to render the fluid
+	std::shared_ptr<SimplePixelShader> volumePS;
+	std::shared_ptr<SimpleVertexShader> volumeVS;
 
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> linearClampSamplerOptions;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> bilinearSamplerOptions;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> pointSamplerOptions;
 
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 
-	DirectX::XMFLOAT4* randomPixels;// = new DirectX::XMFLOAT4[fluidSimGridRes * fluidSimGridRes * fluidSimGridRes];
-	DirectX::XMFLOAT4* randomPixelsPressure;
-	DirectX::XMFLOAT4* randomPixelsDensity;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthState;
+	Microsoft::WRL::ComPtr<ID3D11BlendState> blendState;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterState;
+
 };
 
