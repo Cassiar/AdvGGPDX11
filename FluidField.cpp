@@ -196,7 +196,7 @@ void FluidField::Simulate(float deltaTime)
 		velocityDivergenceShader->SetShader();
 		velocityDivergenceShader->SetFloat("deltaTime", deltaTime);
 		velocityDivergenceShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
-		velocityDivergenceShader->SetFloat("gridRes", fluidSimGridRes);
+		velocityDivergenceShader->SetFloat("gridRes", (float)fluidSimGridRes);
 
 		velocityDivergenceShader->CopyBufferData("ExternalData");
 
@@ -218,7 +218,7 @@ void FluidField::Simulate(float deltaTime)
 		
 		pressureSolverShader->SetFloat("deltaTime", deltaTime);
 		pressureSolverShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
-		pressureSolverShader->SetFloat("gridRes", fluidSimGridRes);
+		pressureSolverShader->SetFloat("gridRes", (float)fluidSimGridRes);
 
 		pressureSolverShader->CopyBufferData("ExternalData");
 
@@ -246,7 +246,7 @@ void FluidField::Simulate(float deltaTime)
 
 		pressureProjectionShader->SetFloat("deltaTime", deltaTime);
 		pressureProjectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
-		pressureProjectionShader->SetFloat("gridRes", fluidSimGridRes);
+		pressureProjectionShader->SetFloat("gridRes", (float)fluidSimGridRes);
 
 		pressureProjectionShader->CopyBufferData("ExternalData");
 
@@ -280,8 +280,8 @@ void FluidField::RenderFluid(Camera* camera) {
 
 	//get the smallest dimension and use for scaling
 	//which for now is the same since we have a perfect cube
-	float smallestDimension = fluidSimGridRes;
-	XMFLOAT3 scale = { fluidSimGridRes, fluidSimGridRes, fluidSimGridRes };
+	float smallestDimension = (float)fluidSimGridRes;
+	XMFLOAT3 scale = { (float)fluidSimGridRes, (float)fluidSimGridRes, (float)fluidSimGridRes };
 
 	//cube location
 	XMFLOAT3 translation(0, 0, 0);
@@ -316,7 +316,7 @@ void FluidField::RenderFluid(Camera* camera) {
 	volumePS->CopyAllBufferData();
 
 	//cube mesh to render fluid within
-	cube->SetBufferAndDraw(context);
+	cube->SetBuffersAndDraw(context);
 
 
 	// Reset render states

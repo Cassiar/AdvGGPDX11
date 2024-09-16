@@ -20,7 +20,7 @@ struct VertexToPixel {
 };
 
 Texture3D volumeTexture : register(t0);
-SmaplerState SamplerLinearClamp : register(s0);
+SamplerState SamplerLinearClamp : register(s0);
 
 bool RayAABBIntersection(float3 pos, float3 dir, float3 boxMin, float3 boxMax, out float t0, out float t1) {
 	//invert direction and get test min and max
@@ -32,7 +32,7 @@ bool RayAABBIntersection(float3 pos, float3 dir, float3 boxMin, float3 boxMax, o
 	float3 tmax = max(testMin, testMax);
 
 	//get max of tmin's xyz
-	float2 t = max(tmin.xx, tmin, yz);
+	float2 t = max(tmin.xx, tmin.yz);
 	t0 = min(t.x, t.y);
 
 	t = min(tmax.xx, tmax.yz);
@@ -49,10 +49,10 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	//get view direction in world space then local
 	float3 pos = cameraPosition;
-	float3 dir = normalize(mul(invWorld, float4(dir, 1)).xyz);
+	float3 dir = normalize(input.worldPos - pos);
 
 	float3 posLocal = mul(invWorld, float4(pos, 1)).xyz;
-	float3 dirLocal = normalize(mul(invWorld, float4(dir, 1)), xyz);
+	float3 dirLocal = normalize(mul(invWorld, float4(dir, 1)).xyz);
 
 	float nearHit;
 	float farHit;
@@ -68,7 +68,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	float maxDist = farHit - nearHit;
 	float3 currentPos = rayStart;
-	float step = 1.73205f / rayMarchSamples; //longest diagonal in cube
+	float step = 1.73205f / raymarchSamples; //longest diagonal in cube
 	float3 stepDir = step * dir;
 
 	float4 finalColor = float4(0, 0, 0, 0);
@@ -93,7 +93,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 			finalColor.rgb += color.rgb * color.a * (1.0f - finalColor.a);
 			finalColor.a += color.a * (1.0f - finalColor.a);
 			if (finalColor.a > 0.99f) {
-				return;
+				break;
 			}
 		}
 
