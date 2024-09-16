@@ -128,6 +128,7 @@ void Game::Init()
 	//pass in all needed rtvs
 	renderer = std::make_shared<Renderer>(device, context, swapChain,
 		backBufferRTV, depthBufferDSV, samplerOptions, clampSamplerOptions,
+		fluidField,
 		this->windowWidth, this->windowHeight);
 }
 
@@ -437,8 +438,8 @@ void Game::LoadAssetsAndCreateEntities()
 	entities.push_back(woodSpherePBR);
 
 	//flat plane to help show ssao, goes through the pbr sphere
-	//std::shared_ptr<GameEntity> plane = std::make_shared<GameEntity>(cubeMesh, paintMatPBR);
-	std::shared_ptr<GameEntity> plane = std::make_shared<GameEntity>(cubeMesh, fluidTest);
+	std::shared_ptr<GameEntity> plane = std::make_shared<GameEntity>(cubeMesh, paintMatPBR);
+	//std::shared_ptr<GameEntity> plane = std::make_shared<GameEntity>(cubeMesh, fluidTest);
 	plane->GetTransform()->SetScale(16, 0.1f, 4);
 	plane->GetTransform()->MoveRelative(0, 2, 0);
 
@@ -536,6 +537,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 	// Update the camera
 	camera->Update(deltaTime);
+	fluidField->Simulate(deltaTime);
 
 	// Check individual input
 	Input& input = Input::GetInstance();
@@ -557,7 +559,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		lightCount);
 
 	bool vsyncNecessary = vsync || !deviceSupportsTearing || isFullscreen;
-	fluidField->Simulate(deltaTime);
 
 	renderer->FrameEnd(vsyncNecessary);
 }

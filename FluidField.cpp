@@ -16,6 +16,8 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	velocityDivergenceShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"VelocityDivergenceCS.cso").c_str());
 	pressureSolverShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"PressureSolverCS.cso").c_str());
 	pressureProjectionShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"PressureProjectionCS.cso").c_str());
+	volumeVS = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), FixPath(L"VolumeVS.cso").c_str());
+	volumePS = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), FixPath(L"VolumePS.cso").c_str());
 
 	//initialize random values for velocity and density map
 
@@ -63,23 +65,23 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	densityData.SysMemSlicePitch = sizeof(XMFLOAT4) * fluidSimGridRes * fluidSimGridRes;
 
 	//create the texture and fill with data
-	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityTex1;
-	device->CreateTexture3D(&desc, &data, velocityTex1.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityTex2;
-	device->CreateTexture3D(&desc, 0, velocityTex2.GetAddressOf());
+	//Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityTex1;
+	//device->CreateTexture3D(&desc, &data, velocityTex1.GetAddressOf());
+	//Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityTex2;
+	//device->CreateTexture3D(&desc, 0, velocityTex2.GetAddressOf());
 
-	Microsoft::WRL::ComPtr<ID3D11Texture3D> densityTex1;
-	device->CreateTexture3D(&desc, &densityData, densityTex1.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11Texture3D> densityTex2;
-	device->CreateTexture3D(&desc, 0, densityTex2.GetAddressOf());
+	//Microsoft::WRL::ComPtr<ID3D11Texture3D> densityTex1;
+	//device->CreateTexture3D(&desc, &densityData, densityTex1.GetAddressOf());
+	//Microsoft::WRL::ComPtr<ID3D11Texture3D> densityTex2;
+	//device->CreateTexture3D(&desc, 0, densityTex2.GetAddressOf());
 
-	Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityDivergenceTex;
-	device->CreateTexture3D(&desc, 0, velocityDivergenceTex.GetAddressOf());
+	//Microsoft::WRL::ComPtr<ID3D11Texture3D> velocityDivergenceTex;
+	//device->CreateTexture3D(&desc, 0, velocityDivergenceTex.GetAddressOf());
 
-	Microsoft::WRL::ComPtr<ID3D11Texture3D> pressureTex1;
-	device->CreateTexture3D(&desc, &pressureData, pressureTex1.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11Texture3D> pressureTex2;
-	device->CreateTexture3D(&desc, 0, pressureTex2.GetAddressOf());
+	//Microsoft::WRL::ComPtr<ID3D11Texture3D> pressureTex1;
+	//device->CreateTexture3D(&desc, &pressureData, pressureTex1.GetAddressOf());
+	//Microsoft::WRL::ComPtr<ID3D11Texture3D> pressureTex2;
+	//device->CreateTexture3D(&desc, 0, pressureTex2.GetAddressOf());
 
 
 	velocityMap[0] = CreateSRVandUAVTexture(randomPixels);
@@ -273,7 +275,7 @@ void FluidField::Simulate(float deltaTime)
 	//densityMapUAVs[1] = uavTemp;
 }
 
-void FluidField::RenderFluid(Camera* camera) {
+void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	context->OMSetDepthStencilState(depthState.Get(), 0);
 	context->OMSetBlendState(blendState.Get(), 0, 0xFFFFFFFF);
 	context->RSSetState(rasterState.Get());

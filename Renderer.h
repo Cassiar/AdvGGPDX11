@@ -8,6 +8,7 @@
 #include "Lights.h"
 #include "Camera.h"
 #include "Sky.h"
+#include "FluidField.h"
 
 #include <Windows.h>
 #include <d3d11.h>
@@ -44,6 +45,7 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthBufferDSV,
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerOptions,
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> clampSamplerOptions,
+		std::shared_ptr<FluidField> fluid,
 		unsigned int windowWidth, unsigned int windowHeight);
 	~Renderer();
 
@@ -110,5 +112,7 @@ private:
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv,
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv,
 		DXGI_FORMAT colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM);
+
+	std::shared_ptr<FluidField> fluid;
 };
 

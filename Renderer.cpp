@@ -20,6 +20,7 @@ Renderer::Renderer(
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthBufferDSV,
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerOptions,
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> clampSamplerOptions,
+	std::shared_ptr<FluidField> fluid,
 	unsigned int windowWidth, unsigned int windowHeight)
 {
 	this->device = device;
@@ -27,6 +28,7 @@ Renderer::Renderer(
 	this->swapChain = swapChain;
 	this->samplerOptions = samplerOptions;
 	this->clampSamplerOptions = clampSamplerOptions;
+	this->fluid = fluid;
 
 	//call post resize since it recreates render targets
 	this->PostResize(backBufferRTV, depthBufferDSV, windowWidth, windowHeight);
@@ -266,6 +268,10 @@ void Renderer::RenderScene(
 
 	// Draw the sky
 	sky->Draw(camera);
+
+	//render the fluid field
+	//after skybox but before post processes
+	//fluid->RenderFluid(camera);
 
 	//ID3D11RenderTargetView* nullViews[4] = {};
 

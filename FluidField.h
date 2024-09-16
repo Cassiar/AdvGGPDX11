@@ -23,7 +23,7 @@ public:
 		return &densityMap[0].srv;
 	};
 
-	void RenderFluid(Camera* camera);
+	void RenderFluid(std::shared_ptr<Camera> camera);
 private:
 	struct VolumeResource {
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
