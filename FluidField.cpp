@@ -102,14 +102,14 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	device->CreateSamplerState(&sampDesc, linearClampSamplerOptions.GetAddressOf());
 
-	D3D11_SAMPLER_DESC bilinearSampDesc = {};
-	bilinearSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	bilinearSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	bilinearSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	bilinearSampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	bilinearSampDesc.MaxAnisotropy = 16;
-	bilinearSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	device->CreateSamplerState(&bilinearSampDesc, bilinearSamplerOptions.GetAddressOf());
+	//D3D11_SAMPLER_DESC bilinearSampDesc = {};
+	//bilinearSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	//bilinearSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	//bilinearSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	//bilinearSampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	//bilinearSampDesc.MaxAnisotropy = 16;
+	//bilinearSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	//device->CreateSamplerState(&bilinearSampDesc, bilinearSamplerOptions.GetAddressOf());
 
 	D3D11_SAMPLER_DESC pointSampDesc = {};
 	pointSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -125,6 +125,17 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	depthDesc.DepthFunc = D3D11_COMPARISON_LESS;
 	device->CreateDepthStencilState(&depthDesc, depthState.GetAddressOf());
+
+	D3D11_BLEND_DESC blendDesc = {};
+	blendDesc.RenderTarget[0].BlendEnable = true;
+	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	device->CreateBlendState(&blendDesc, blendState.GetAddressOf());
 
 	D3D11_RASTERIZER_DESC rasterDesc = {};
 	rasterDesc.CullMode = D3D11_CULL_FRONT;
@@ -306,7 +317,7 @@ void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	//should be linear clamp
 	volumeVS->SetSamplerState("SamplerLinearClamp", linearClampSamplerOptions);
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = densityMap[0].srv;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = velocityMap[0].srv;
 	//this where code to switch which srv is being displayed would go
 
 	volumePS->SetShaderResourceView("volumeTexture", srv);
@@ -314,7 +325,7 @@ void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	volumePS->SetMatrix4x4("invWorld", invWorld);
 	volumePS->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
 	volumePS->SetFloat3("fluidColor", fluidColor);
-	volumePS->SetInt("renderMode", -1);
+	volumePS->SetInt("renderMode", -1);//blend in ps
 	volumePS->SetInt("raymarchSamples", raymarchSamples);
 	volumePS->CopyAllBufferData();
 
