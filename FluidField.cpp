@@ -317,7 +317,7 @@ void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	//should be linear clamp
 	volumeVS->SetSamplerState("SamplerLinearClamp", linearClampSamplerOptions);
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = velocityMap[0].srv;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = densityMap[0].srv;
 	//this where code to switch which srv is being displayed would go
 
 	volumePS->SetShaderResourceView("volumeTexture", srv);
@@ -325,7 +325,7 @@ void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	volumePS->SetMatrix4x4("invWorld", invWorld);
 	volumePS->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
 	volumePS->SetFloat3("fluidColor", fluidColor);
-	volumePS->SetInt("renderMode", -1);//blend in ps
+	volumePS->SetInt("renderMode", 0);//blend in ps
 	volumePS->SetInt("raymarchSamples", raymarchSamples);
 	volumePS->CopyAllBufferData();
 
