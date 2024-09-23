@@ -271,7 +271,7 @@ void Renderer::RenderScene(
 
 	//render the fluid field
 	//after skybox but before post processes
-	//fluid->RenderFluid(camera);
+	fluid->RenderFluid(camera);
 
 	//ID3D11RenderTargetView* nullViews[4] = {};
 

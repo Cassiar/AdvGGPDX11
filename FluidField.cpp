@@ -283,7 +283,8 @@ void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	//get the smallest dimension and use for scaling
 	//which for now is the same since we have a perfect cube
 	float smallestDimension = (float)fluidSimGridRes;
-	XMFLOAT3 scale = { (float)fluidSimGridRes, (float)fluidSimGridRes, (float)fluidSimGridRes };
+	//XMFLOAT3 scale = { (float)fluidSimGridRes, (float)fluidSimGridRes, (float)fluidSimGridRes };
+	XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f };
 
 	//cube location
 	XMFLOAT3 translation(0, 0, 0);
