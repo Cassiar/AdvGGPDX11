@@ -25,7 +25,7 @@ VertexToPixel main( VertexShaderInput input)
 	matrix worldViewProj = mul(projection, mul(view, world));
 	output.screenPosition = mul(worldViewProj, float4(input.position, 1.0f));
 
-	output.worldPos = mul(world, float4(input.position, 1.0f).xyz);
+	output.worldPos = mul(world, float4(input.position, 1.0f)).xyz;
 
 	//need to flip y to match tex coords
 	output.uvw = saturate(sign(input.position));

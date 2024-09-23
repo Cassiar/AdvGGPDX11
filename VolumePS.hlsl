@@ -16,7 +16,7 @@ cbuffer externalData : register(b0) {
 struct VertexToPixel {
 	float4 screenPosition	: SV_POSITION;
 	float3 uvw				: TEXCOORD;
-	float worldPos : POSITION;
+	float3 worldPos : POSITION;
 };
 
 Texture3D volumeTexture : register(t0);
