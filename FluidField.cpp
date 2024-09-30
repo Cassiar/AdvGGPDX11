@@ -276,14 +276,8 @@ void FluidField::Simulate(float deltaTime)
 		pressureProjectionShader->SetShaderResourceView("PressureMap", 0);
 		pressureProjectionShader->SetUnorderedAccessView("UavOutputMap", 0);
 	}
-	//SwapBuffers();
-	//Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> temp = densityMapSRVs[0];
-	//densityMapSRVs[0] = densityMapSRVs[1];
-	//densityMapSRVs[1] = temp;
-	//
-	//Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uavTemp = densityMapUAVs[0];
-	//densityMapUAVs[0] = densityMapUAVs[1];
-	//densityMapUAVs[1] = uavTemp;
+	
+	SwapBuffers(densityMap);
 }
 
 void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
@@ -317,7 +311,7 @@ void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	//should be linear clamp
 	volumeVS->SetSamplerState("SamplerLinearClamp", linearClampSamplerOptions);
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = densityMap[0].srv;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = densityMap[1].srv;
 	//this where code to switch which srv is being displayed would go
 
 	volumePS->SetShaderResourceView("VolumeTexture", srv);

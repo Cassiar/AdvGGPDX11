@@ -84,7 +84,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 			finalColor.a = 1;
 		}
 		else if (renderMode == RENDER_MODE_ADD) {
-			float4 colorAndDensity = VolumeTexture.SampleLevel(SamplerLinearClamp, uvw, 0);
+			//float4 colorAndDensity = VolumeTexture.SampleLevel(SamplerLinearClamp, uvw, 0);
 
 			finalColor.rgb += color.rgb * color.a;
 			finalColor.a += color.a;
