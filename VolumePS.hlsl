@@ -19,7 +19,7 @@ struct VertexToPixel {
 	float3 worldPos : POSITION;
 };
 
-Texture3D volumeTexture : register(t0);
+Texture3D VolumeTexture : register(t0);
 SamplerState SamplerLinearClamp : register(s0);
 
 bool RayAABBIntersection(float3 pos, float3 dir, float3 boxMin, float3 boxMax, out float t0, out float t1) {
@@ -77,14 +77,14 @@ float4 main(VertexToPixel input) : SV_TARGET
 	[loop]
 	for (int i = 0; i < raymarchSamples && totalDist < maxDist; i++) {
 		float uvw = currentPos + float3(0.5f, 0.5f, 0.5f);
-		float4 color = volumeTexture.SampleLevel(SamplerLinearClamp, uvw, 0);
+		float4 color = VolumeTexture.SampleLevel(SamplerLinearClamp, uvw, 0);
 
 		if (renderMode == RENDER_MODE_DEBUG) {
 			finalColor += color * step;
 			finalColor.a = 1;
 		}
 		else if (renderMode == RENDER_MODE_ADD) {
-			float4 colorAndDensity = volumeTexture.SampleLevel(SamplerLinearClamp, uvw, 0);
+			float4 colorAndDensity = VolumeTexture.SampleLevel(SamplerLinearClamp, uvw, 0);
 
 			finalColor.rgb += color.rgb * color.a;
 			finalColor.a += color.a;

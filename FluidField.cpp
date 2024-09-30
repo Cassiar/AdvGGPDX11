@@ -320,7 +320,7 @@ void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = densityMap[0].srv;
 	//this where code to switch which srv is being displayed would go
 
-	volumePS->SetShaderResourceView("volumeTexture", srv);
+	volumePS->SetShaderResourceView("VolumeTexture", srv);
 
 	volumePS->SetMatrix4x4("invWorld", invWorld);
 	volumePS->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());

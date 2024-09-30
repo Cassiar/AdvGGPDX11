@@ -369,13 +369,13 @@ void Game::LoadAssetsAndCreateEntities()
 	plastic->AddTextureSRV("RoughnessMap", grey);
 	plastic->AddTextureSRV("MetalMap", black);
 
-	std::shared_ptr<Material> fluidTest = std::make_shared<Material>(pixelShaderPBR, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
-	fluidTest->AddSampler("BasicSampler", samplerOptions);
-	fluidTest->AddSampler("ClampSampler", clampSamplerOptions);
-	fluidTest->AddTextureSRV("Albedo", *fluidField->GetDensityMap());
-	fluidTest->AddTextureSRV("NormalMap", flatNormal);
-	fluidTest->AddTextureSRV("RoughnessMap", grey);
-	fluidTest->AddTextureSRV("MetalMap", black);
+	//std::shared_ptr<Material> fluidTest = std::make_shared<Material>(pixelShaderPBR, vertexShader, XMFLOAT3(1, 1, 1), XMFLOAT2(2, 2));
+	//fluidTest->AddSampler("BasicSampler", samplerOptions);
+	//fluidTest->AddSampler("ClampSampler", clampSamplerOptions);
+	//fluidTest->AddTextureSRV("Albedo", *fluidField->GetDensityMap());
+	//fluidTest->AddTextureSRV("NormalMap", flatNormal);
+	//fluidTest->AddTextureSRV("RoughnessMap", grey);
+	//fluidTest->AddTextureSRV("MetalMap", black);
 
 	// === Create PBR IBL tests ========================================
 	std::shared_ptr<GameEntity> noRoughSphere = std::make_shared<GameEntity>(sphereMesh, noRoughMetal);
