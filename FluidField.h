@@ -43,7 +43,7 @@ private:
 	/// <summary>
 	/// Helper fucntion to create paired SRVs and UAVs for fluid sim
 	/// </summary>
-	VolumeResource CreateSRVandUAVTexture(void* initialData);// Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav);
+	VolumeResource CreateSRVandUAVTexture(DXGI_FORMAT format, void* initialData);// Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav);
 	
 	unsigned int DXGIFormatBits(DXGI_FORMAT format);
 	unsigned int DXGIFormatBytes(DXGI_FORMAT format);

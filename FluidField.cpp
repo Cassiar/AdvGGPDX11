@@ -84,16 +84,16 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	//device->CreateTexture3D(&desc, 0, pressureTex2.GetAddressOf());
 
 
-	velocityMap[0] = CreateSRVandUAVTexture(randomPixels);
-	velocityMap[1] = CreateSRVandUAVTexture(0);
+	velocityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, randomPixels);
+	velocityMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 
-	densityMap[0] = CreateSRVandUAVTexture(randomPixelsDensity);
-	densityMap[1] = CreateSRVandUAVTexture(0);
+	densityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, randomPixelsDensity);
+	densityMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 
-	velocityDivergenceMap = CreateSRVandUAVTexture(0);
+	velocityDivergenceMap = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 
-	pressureMap[0] = CreateSRVandUAVTexture(randomPixelsPressure);
-	pressureMap[1] = CreateSRVandUAVTexture(0);
+	pressureMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, randomPixelsPressure);
+	pressureMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -351,13 +351,13 @@ void FluidField::SwapPressureBuffers() {
 	//pressureMapUAVs[1] = uavTemp;
 }
 
-FluidField::VolumeResource FluidField::CreateSRVandUAVTexture(void* initialData) {
+FluidField::VolumeResource FluidField::CreateSRVandUAVTexture(DXGI_FORMAT format, void* initialData) {
 
 	D3D11_TEXTURE3D_DESC desc = {};
 	desc.Width = fluidSimGridRes;
 	desc.Height = fluidSimGridRes;
 	desc.Depth = fluidSimGridRes;
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.Format = format;
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	desc.CPUAccessFlags = 0;
 	desc.MiscFlags = 0;
@@ -378,8 +378,8 @@ FluidField::VolumeResource FluidField::CreateSRVandUAVTexture(void* initialData)
 	D3D11_SUBRESOURCE_DATA data = {};
 	if (initialData) {
 		data.pSysMem = initialData;
-		data.SysMemPitch = sizeof(XMFLOAT4) * fluidSimGridRes;
-		data.SysMemSlicePitch = sizeof(XMFLOAT4) * fluidSimGridRes * fluidSimGridRes;
+		data.SysMemPitch = DXGIFormatBytes(format) * fluidSimGridRes;
+		data.SysMemSlicePitch = DXGIFormatBytes(format) * fluidSimGridRes * fluidSimGridRes;
 	}
 
 	//create the texture and fill with data
