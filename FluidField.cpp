@@ -18,6 +18,7 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	pressureProjectionShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"PressureProjectionCS.cso").c_str());
 	volumeVS = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), FixPath(L"VolumeVS.cso").c_str());
 	volumePS = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), FixPath(L"VolumePS.cso").c_str());
+	clearCompShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"Clear3DTextureCS.cso").c_str());
 
 	//initialize random values for velocity and density map
 
@@ -30,10 +31,10 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 		XMVECTOR randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
 		XMStoreFloat4(&randomPixels[i], XMVector3Normalize(randomVec));
 
-		randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
+		randomVec = XMVectorSet(RandomRange(0, 1), RandomRange(0, 1), RandomRange(0, 1), 0);
 		XMStoreFloat4(&randomPixelsPressure[i], XMVector3Normalize(randomVec));
 
-		randomVec = XMVectorSet(RandomRange(-1, 1), RandomRange(-1, 1), RandomRange(-1, 1), 0);
+		randomVec = XMVectorSet(RandomRange(0, 1), RandomRange(0, 1), RandomRange(0, 1), RandomRange(0,1));
 		XMStoreFloat4(&randomPixelsDensity[i], XMVector3Normalize(randomVec));
 	}
 
@@ -204,6 +205,9 @@ void FluidField::Simulate(float deltaTime)
 		advectionShader->SetUnorderedAccessView("UavOutputMap", 0);
 	}
 
+	SwapBuffers(velocityMap);
+	SwapBuffers(densityMap);
+
 	//velocity divergence
 	{
 		velocityDivergenceShader->SetShader();
@@ -213,7 +217,7 @@ void FluidField::Simulate(float deltaTime)
 
 		velocityDivergenceShader->CopyBufferData("ExternalData");
 
-		velocityDivergenceShader->SetShaderResourceView("VelocityMap", velocityMap[1].srv.Get());
+		velocityDivergenceShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
 		velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", velocityDivergenceMap.uav.Get());
 
 		velocityDivergenceShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
@@ -225,17 +229,28 @@ void FluidField::Simulate(float deltaTime)
 		velocityDivergenceShader->SetUnorderedAccessView("UavOutputMap", 0);
 	}
 
+	//clear the pressure tex first
+	clearCompShader->SetShader();
+	clearCompShader->SetFloat4("clearColor", { 0,0,0,0 });
+	clearCompShader->SetInt("channelCount", 1);
+	clearCompShader->CopyAllBufferData();
+
+	clearCompShader->SetUnorderedAccessView("ClearOut1", pressureMap[0].uav);
+	clearCompShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
+	clearCompShader->SetUnorderedAccessView("ClearOut1", 0);
+
 	//pressure solver, run like 20 times
+	pressureSolverShader->SetShader();
+
+	pressureSolverShader->SetFloat("deltaTime", deltaTime);
+	pressureSolverShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
+	pressureSolverShader->SetFloat("gridRes", (float)fluidSimGridRes);
+
+	pressureSolverShader->CopyBufferData("ExternalData");
+	pressureSolverShader->SetShaderResourceView("VelocityDivergenceMap", velocityDivergenceMap.srv.Get());
+
 	for (int i = 0; i < 20; i++) {
-		pressureSolverShader->SetShader();
-		
-		pressureSolverShader->SetFloat("deltaTime", deltaTime);
-		pressureSolverShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
-		pressureSolverShader->SetFloat("gridRes", (float)fluidSimGridRes);
 
-		pressureSolverShader->CopyBufferData("ExternalData");
-
-		pressureSolverShader->SetShaderResourceView("VelocityDivergenceMap", velocityDivergenceMap.srv.Get());
 		pressureSolverShader->SetShaderResourceView("PressureMap", pressureMap[0].srv.Get());
 		pressureSolverShader->SetUnorderedAccessView("UavOutputMap", pressureMap[1].uav.Get());
 
@@ -245,13 +260,12 @@ void FluidField::Simulate(float deltaTime)
 		//dispatch and unbind
 		pressureSolverShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
 
-		pressureSolverShader->SetShaderResourceView("VelocityDivergenceMap", 0);
-		pressureSolverShader->SetShaderResourceView("PressureMap", 0);
-		pressureSolverShader->SetUnorderedAccessView("UavOutputMap", 0);
-
 		//swap pressure buffers for next solver pass
 		SwapBuffers(pressureMap);
 	}
+	pressureSolverShader->SetShaderResourceView("PressureMap", 0);
+	pressureSolverShader->SetUnorderedAccessView("UavOutputMap", 0);
+	pressureSolverShader->SetShaderResourceView("VelocityDivergenceMap", 0);
 
 	//pressure projection
 	{
@@ -263,9 +277,9 @@ void FluidField::Simulate(float deltaTime)
 
 		pressureProjectionShader->CopyBufferData("ExternalData");
 
-		pressureProjectionShader->SetShaderResourceView("VelocityMap", velocityMap[1].srv.Get());
+		pressureProjectionShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
 		pressureProjectionShader->SetShaderResourceView("PressureMap", pressureMap[0].srv.Get());
-		pressureProjectionShader->SetUnorderedAccessView("UavOutputMap", velocityMap[0].uav.Get());
+		pressureProjectionShader->SetUnorderedAccessView("UavOutputMap", velocityMap[1].uav.Get());
 
 		pressureProjectionShader->SetSamplerState("PointSampler", pointSamplerOptions.Get());
 
@@ -276,8 +290,7 @@ void FluidField::Simulate(float deltaTime)
 		pressureProjectionShader->SetShaderResourceView("PressureMap", 0);
 		pressureProjectionShader->SetUnorderedAccessView("UavOutputMap", 0);
 	}
-	
-	SwapBuffers(densityMap);
+	SwapBuffers(velocityMap);
 }
 
 void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
@@ -319,7 +332,7 @@ void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	volumePS->SetMatrix4x4("invWorld", invWorld);
 	volumePS->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
 	volumePS->SetFloat3("fluidColor", fluidColor);
-	volumePS->SetInt("renderMode", 0);//blend in ps
+	volumePS->SetInt("renderMode", 0);
 	volumePS->SetInt("raymarchSamples", raymarchSamples);
 	volumePS->CopyAllBufferData();
 

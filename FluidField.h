@@ -75,6 +75,7 @@ private:
 	std::shared_ptr<SimpleComputeShader> velocityDivergenceShader;
 	std::shared_ptr<SimpleComputeShader> pressureSolverShader;
 	std::shared_ptr<SimpleComputeShader> pressureProjectionShader;
+	std::shared_ptr<SimpleComputeShader> clearCompShader;
 
 	//shaders to render the fluid
 	std::shared_ptr<SimplePixelShader> volumePS;
