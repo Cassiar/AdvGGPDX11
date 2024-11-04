@@ -85,18 +85,18 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	//device->CreateTexture3D(&desc, 0, pressureTex2.GetAddressOf());
 
 
-	velocityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, randomPixels);
-	//velocityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+	//velocityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, randomPixels);
+	velocityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 	velocityMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 
-	densityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, randomPixelsDensity);
-	//densityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+	//densityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, randomPixelsDensity);
+	densityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 	densityMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 
 	velocityDivergenceMap = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 
-	pressureMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, randomPixelsPressure);
-	//pressureMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
+	//pressureMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, randomPixelsPressure);
+	pressureMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 	pressureMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 
 	D3D11_SAMPLER_DESC sampDesc = {};
