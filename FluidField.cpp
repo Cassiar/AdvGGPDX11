@@ -19,6 +19,7 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	volumeVS = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), FixPath(L"VolumeVS.cso").c_str());
 	volumePS = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), FixPath(L"VolumePS.cso").c_str());
 	clearCompShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"Clear3DTextureCS.cso").c_str());
+	injectSmokeShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"InjectSmokeCS.cso").c_str());
 
 	//initialize random values for velocity and density map
 
@@ -92,6 +93,9 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	//densityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, randomPixelsDensity);
 	densityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 	densityMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+	
+	temperatureMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
+	temperatureMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 
 	velocityDivergenceMap = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 
@@ -221,8 +225,73 @@ void FluidField::Simulate(float deltaTime)
 		advectionShader->SetUnorderedAccessView("UavOutputMap", 0);
 	}
 
+	//temperature advection
+	{
+		advectionShader->SetShader();
+		advectionShader->SetFloat("deltaTime", fixedTimeStep);
+		advectionShader->SetInt("gridRes", fluidSimGridRes);
+
+		//advectionShader->CopyBufferData("ExternalData");
+		advectionShader->CopyAllBufferData();
+
+		advectionShader->SetShaderResourceView("InputMap", temperatureMap[0].srv.Get());
+		advectionShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
+		advectionShader->SetUnorderedAccessView("UavOutputMap", temperatureMap[1].uav.Get());
+
+		advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
+
+		advectionShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
+
+		//unbind textures	
+		advectionShader->SetShaderResourceView("InputMap", 0);
+		advectionShader->SetShaderResourceView("VelocityMap", 0);
+		advectionShader->SetUnorderedAccessView("UavOutputMap", 0);
+	}
+
 	SwapBuffers(velocityMap);
 	SwapBuffers(densityMap);
+	SwapBuffers(temperatureMap);
+
+	//inject smoke
+	{
+		injectSmokeShader->SetShader();
+		injectSmokeShader->SetFloat("deltaTime", fixedTimeStep);
+		injectSmokeShader->SetFloat("injectRadius", injectRadius);
+		injectSmokeShader->SetFloat3("injectPosition", injectPosition);
+		injectSmokeShader->SetFloat3("injectColor", fluidColor);
+		injectSmokeShader->SetFloat("injectDensity", injectDensity);
+		injectSmokeShader->SetFloat("injectTemperature", injectTemperature);
+		injectSmokeShader->SetFloat3("injectVelocity", injectVelocityImpulse);
+		injectSmokeShader->SetInt("gridSize", fluidSimGridRes);
+		injectSmokeShader->CopyAllBufferData();
+
+		injectSmokeShader->SetShaderResourceView("DensityMap", densityMap[0].srv.Get());
+		injectSmokeShader->SetShaderResourceView("TemperatureMap", temperatureMap[0].srv.Get());
+		injectSmokeShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
+		injectSmokeShader->SetUnorderedAccessView("DensityOut", densityMap[1].uav.Get());
+		injectSmokeShader->SetUnorderedAccessView("TemperatureOut", temperatureMap[1].uav.Get());
+		injectSmokeShader->SetUnorderedAccessView("VelocityOut", velocityMap[1].uav.Get());
+
+		//run compute shader
+		injectSmokeShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
+
+		//unbind
+		injectSmokeShader->SetShaderResourceView("DensityMap", 0);
+		injectSmokeShader->SetShaderResourceView("TemperatureMap", 0);
+		injectSmokeShader->SetShaderResourceView("VelocityMap", 0);
+		injectSmokeShader->SetUnorderedAccessView("DensityOut", 0);
+		injectSmokeShader->SetUnorderedAccessView("TemperatureOut", 0);
+		injectSmokeShader->SetUnorderedAccessView("VelocityOut", 0);
+
+		//swap buffers
+		SwapBuffers(densityMap);
+		SwapBuffers(temperatureMap);
+		SwapBuffers(velocityMap);
+
+		//reset injection velocity impulse now that it's been used
+		//injectVelocityImpulse = {};
+	}
+
 
 	//velocity divergence
 	{

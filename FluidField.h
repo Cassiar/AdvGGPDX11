@@ -64,11 +64,26 @@ private:
 	int raymarchSamples = 128;
 	Transform transform;
 
+	//inject smoke data
+	float ambientTemperature = 0.0f;
+	float injectTemperature = 0.5f;
+	float injectDensity = 0.05f;
+	float injectRadius = 0.15f;
+	float injectVelocityImpulseScale = 5.0f;
+	float temperatureBuoyancy = 0.5f;
+	float densityWeight = 0.1f;
+	float velocityDamper = 1.0f;
+	float densityDamper = 1.0f;
+	float temperatureDamper = 1.0f;
+	float vorticityEpsilon = 0.3f;
+	DirectX::XMFLOAT3 injectPosition = { 0.5f, 0.2f, 0.5f };
+	DirectX::XMFLOAT3 injectVelocityImpulse = { 0, 0, 0 };
+
 	std::shared_ptr<Mesh> cube;
 
 	VolumeResource velocityMap[2];
-
 	VolumeResource densityMap[2];
+	VolumeResource temperatureMap[2];
 
 	VolumeResource velocityDivergenceMap;
 
@@ -79,6 +94,7 @@ private:
 	std::shared_ptr<SimpleComputeShader> pressureSolverShader;
 	std::shared_ptr<SimpleComputeShader> pressureProjectionShader;
 	std::shared_ptr<SimpleComputeShader> clearCompShader;
+	std::shared_ptr<SimpleComputeShader> injectSmokeShader;
 
 	//shaders to render the fluid
 	std::shared_ptr<SimplePixelShader> volumePS;
