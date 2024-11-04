@@ -12,7 +12,7 @@ Texture3D<float4> InputMap : register (t0);
 Texture3D<float4> VelocityMap : register (t1);
 //Texture3D<float4> DensityMap : register (t2);
 
-SamplerState BilinearSampler : register(s0);
+SamplerState LinearClampSampler : register(s0);
 
 [numthreads(GROUP_SIZE, GROUP_SIZE, GROUP_SIZE)]
 void main( uint3 DTid : SV_DispatchThreadID )
@@ -31,5 +31,5 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	float3 posUVW = PixelIndexToUVW(pos, gridRes);
 
 	//write to output buffer which will be next frames data
-	UavOutputMap[DTid] = InputMap.SampleLevel(BilinearSampler, pos, 0.0f);
+	UavOutputMap[DTid] = InputMap.SampleLevel(LinearClampSampler, pos, 0.0f);
 }

@@ -192,7 +192,7 @@ void FluidField::Simulate(float deltaTime)
 		advectionShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
 		advectionShader->SetUnorderedAccessView("UavOutputMap", velocityMap[1].uav.Get());
 
-		advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
+		advectionShader->SetSamplerState("LinearClampSampler", linearClampSamplerOptions.Get());
 
 		advectionShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
 
@@ -215,7 +215,7 @@ void FluidField::Simulate(float deltaTime)
 		advectionShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
 		advectionShader->SetUnorderedAccessView("UavOutputMap", densityMap[1].uav.Get());
 
-		advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
+		advectionShader->SetSamplerState("LinearClampSampler", linearClampSamplerOptions.Get());
 
 		advectionShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
 
@@ -238,7 +238,7 @@ void FluidField::Simulate(float deltaTime)
 		advectionShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
 		advectionShader->SetUnorderedAccessView("UavOutputMap", temperatureMap[1].uav.Get());
 
-		advectionShader->SetSamplerState("BilinearSampler", bilinearSamplerOptions.Get());
+		advectionShader->SetSamplerState("LinearClampSampler", linearClampSamplerOptions.Get());
 
 		advectionShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
 
