@@ -537,7 +537,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 	// Update the camera
 	camera->Update(deltaTime);
-	fluidField->Simulate(deltaTime);
+	fluidField->UpdateFluid(deltaTime);
 
 	// Check individual input
 	Input& input = Input::GetInstance();

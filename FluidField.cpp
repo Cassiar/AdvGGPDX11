@@ -86,14 +86,17 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 
 
 	velocityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, randomPixels);
+	//velocityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 	velocityMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 
 	densityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, randomPixelsDensity);
+	//densityMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 	densityMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 
 	velocityDivergenceMap = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 
 	pressureMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, randomPixelsPressure);
+	//pressureMap[0] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 	pressureMap[1] = CreateSRVandUAVTexture(DXGI_FORMAT_R32_FLOAT, 0);
 
 	D3D11_SAMPLER_DESC sampDesc = {};
@@ -159,15 +162,27 @@ Transform* FluidField::GetTransform()
 	return &transform;
 }
 
+void FluidField::UpdateFluid(float deltaTime) {
+	//update time counter so we have a consistent delta time for simulation
+	timeCounter += deltaTime;
+	if (timeCounter < fixedTimeStep) {
+		return;
+	}
+
+	Simulate(deltaTime);
+	timeCounter -= fixedTimeStep;
+}
+
 void FluidField::Simulate(float deltaTime)
 {
 	//velocity advection
 	{
 		advectionShader->SetShader();
-		advectionShader->SetFloat("deltaTime", deltaTime);
-		advectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
+		advectionShader->SetFloat("deltaTime", fixedTimeStep);
+		advectionShader->SetInt("gridRes", fluidSimGridRes);
 
-		advectionShader->CopyBufferData("ExternalData");
+		//advectionShader->CopyBufferData("ExternalData");
+		advectionShader->CopyAllBufferData();
 
 		advectionShader->SetShaderResourceView("InputMap", velocityMap[0].srv.Get());
 		advectionShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
@@ -186,10 +201,11 @@ void FluidField::Simulate(float deltaTime)
 	//density advection
 	{
 		advectionShader->SetShader();
-		advectionShader->SetFloat("deltaTime", deltaTime);
-		advectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
+		advectionShader->SetFloat("deltaTime", fixedTimeStep);
+		advectionShader->SetInt("gridRes", fluidSimGridRes);
 
-		advectionShader->CopyBufferData("ExternalData");
+		//advectionShader->CopyBufferData("ExternalData");
+		advectionShader->CopyAllBufferData();
 
 		advectionShader->SetShaderResourceView("InputMap", densityMap[0].srv.Get());
 		advectionShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
@@ -211,9 +227,9 @@ void FluidField::Simulate(float deltaTime)
 	//velocity divergence
 	{
 		velocityDivergenceShader->SetShader();
-		velocityDivergenceShader->SetFloat("deltaTime", deltaTime);
+		velocityDivergenceShader->SetFloat("deltaTime", fixedTimeStep);
 		velocityDivergenceShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
-		velocityDivergenceShader->SetFloat("gridRes", (float)fluidSimGridRes);
+		velocityDivergenceShader->SetInt("gridRes", fluidSimGridRes);
 
 		velocityDivergenceShader->CopyBufferData("ExternalData");
 
@@ -242,11 +258,12 @@ void FluidField::Simulate(float deltaTime)
 	//pressure solver, run like 20 times
 	pressureSolverShader->SetShader();
 
-	pressureSolverShader->SetFloat("deltaTime", deltaTime);
+	pressureSolverShader->SetFloat("deltaTime", fixedTimeStep);
 	pressureSolverShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
-	pressureSolverShader->SetFloat("gridRes", (float)fluidSimGridRes);
+	pressureSolverShader->SetInt("gridRes", fluidSimGridRes);
 
-	pressureSolverShader->CopyBufferData("ExternalData");
+	//pressureSolverShader->CopyBufferData("ExternalData");
+	pressureSolverShader->CopyAllBufferData();
 	pressureSolverShader->SetShaderResourceView("VelocityDivergenceMap", velocityDivergenceMap.srv.Get());
 
 	for (int i = 0; i < 20; i++) {
@@ -260,6 +277,8 @@ void FluidField::Simulate(float deltaTime)
 		//dispatch and unbind
 		pressureSolverShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
 
+		pressureSolverShader->SetUnorderedAccessView("UavOutputMap", 0);
+
 		//swap pressure buffers for next solver pass
 		SwapBuffers(pressureMap);
 	}
@@ -271,11 +290,12 @@ void FluidField::Simulate(float deltaTime)
 	{
 		pressureProjectionShader->SetShader();
 
-		pressureProjectionShader->SetFloat("deltaTime", deltaTime);
+		pressureProjectionShader->SetFloat("deltaTime", fixedTimeStep);
 		pressureProjectionShader->SetFloat("invFluidSimGridRes", invFluidSimGridRes);
-		pressureProjectionShader->SetFloat("gridRes", (float)fluidSimGridRes);
+		pressureProjectionShader->SetInt("gridRes", fluidSimGridRes);
 
-		pressureProjectionShader->CopyBufferData("ExternalData");
+		//pressureProjectionShader->CopyBufferData("ExternalData");
+		pressureProjectionShader->CopyAllBufferData();
 
 		pressureProjectionShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv.Get());
 		pressureProjectionShader->SetShaderResourceView("PressureMap", pressureMap[0].srv.Get());
@@ -324,7 +344,7 @@ void FluidField::RenderFluid(std::shared_ptr<Camera> camera) {
 	//should be linear clamp
 	volumeVS->SetSamplerState("SamplerLinearClamp", linearClampSamplerOptions);
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = densityMap[1].srv;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv = densityMap[0].srv;
 	//this where code to switch which srv is being displayed would go
 
 	volumePS->SetShaderResourceView("VolumeTexture", srv);

@@ -35,4 +35,12 @@ int3 GetFrontIndex(int3 index, int gridSize) {
 	index.z = min(index.z + 1, gridSize - 1);
 	return index;
 }
+
+float3 PixelIndexToUVW(float3 index, int gridSize) {
+	return float3((index + 0.5f) / gridSize);
+}
+
+uint3 UVWToPixelIndex(float3 uvw, float3 sizes) {
+	return (uint3)floor(uvw * (sizes - 1));
+}
 #endif

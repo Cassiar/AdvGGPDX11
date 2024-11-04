@@ -10,7 +10,7 @@ RWTexture3D<float4> UavOutputMap : register (u0);
 Texture3D<float4> VelocityMap : register (t0);
 
 //SamplerState BilinearSampler : register(s0);
-SamplerState PointSampler : register(s0); 
+//SamplerState PointSampler : register(s0); 
 
 [numthreads(GROUP_SIZE, GROUP_SIZE, GROUP_SIZE)]
 void main( uint3 DTid : SV_DispatchThreadID )

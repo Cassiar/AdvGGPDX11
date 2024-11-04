@@ -10,7 +10,7 @@ RWTexture3D<float4> UavOutputMap : register (u0);
 Texture3D<float4> VelocityMap : register (t0);
 Texture3D<float4> PressureMap : register(t1);
 
-SamplerState PointSampler : register(s0);
+//SamplerState PointSampler : register(s0);
 
 [numthreads(GROUP_SIZE, GROUP_SIZE, GROUP_SIZE)]
 void main( uint3 DTid : SV_DispatchThreadID )
@@ -33,5 +33,5 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	// subtracting the gradient of pressure.    
 	float3 vOld = VelocityMap[DTid];// VelocityMap.SampleLevel(PointSampler, coords, 0.0f);
 	float3 vNew = vOld - gradP;
-	UavOutputMap[DTid] = float4(vNew, 0);
+	UavOutputMap[DTid] = float4(vNew, 1);
 }

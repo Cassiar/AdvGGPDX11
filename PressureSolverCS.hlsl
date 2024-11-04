@@ -12,8 +12,8 @@ RWTexture3D<float4> UavOutputMap : register (u0);
 Texture3D<float4> VelocityDivergenceMap : register (t0);
 Texture3D<float4> PressureMap : register (t1);
 
-SamplerState BilinearSampler : register(s0);
-SamplerState PointSampler : register(s1);
+//SamplerState BilinearSampler : register(s0);
+//SamplerState PointSampler : register(s1);
 
 groupshared float pressureLDS[GROUP_SIZE + 2][GROUP_SIZE + 2][GROUP_SIZE + 2];
 

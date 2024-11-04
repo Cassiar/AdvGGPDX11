@@ -292,6 +292,7 @@ void Renderer::RenderScene(
 	//call fullscreen vs and ssao calc ps
 	fullscreenVS->SetShader();
 	ssaoCalcPS->SetShader();
+
 	ssaoCalcPS->SetMatrix4x4("viewMatrix", camera->GetView());
 	ssaoCalcPS->SetMatrix4x4("projMatrix", camera->GetProjection());
 	ssaoCalcPS->SetMatrix4x4("invProjMatrix", camera->GetInverseProjection());

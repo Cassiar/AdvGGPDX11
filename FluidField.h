@@ -18,6 +18,7 @@ public:
 
 	Transform* GetTransform();
 
+	void UpdateFluid(float deltaTime);
 	void Simulate(float deltaTime);
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* GetDensityMap() {
 		return &densityMap[0].srv;
@@ -52,6 +53,8 @@ private:
 	int fluidSimGridRes = 64;
 	float invFluidSimGridRes = 1.0f / fluidSimGridRes;
 	//int groupSize = 8;//8*8*8 =512 the grid res
+	float fixedTimeStep = 0.016f;
+	float timeCounter = 0;
 
 	DirectX::XMFLOAT4* randomPixels;// = new DirectX::XMFLOAT4[fluidSimGridRes * fluidSimGridRes * fluidSimGridRes];
 	DirectX::XMFLOAT4* randomPixelsPressure;
