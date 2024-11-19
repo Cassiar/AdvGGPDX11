@@ -229,7 +229,7 @@
     <FxCompile Include="InjectSmokeCS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="BouyancyShader.hlsl">
+    <FxCompile Include="BuoyancyCS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -20,7 +20,7 @@ FluidField::FluidField(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::W
 	volumePS = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), FixPath(L"VolumePS.cso").c_str());
 	clearCompShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"Clear3DTextureCS.cso").c_str());
 	injectSmokeShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"InjectSmokeCS.cso").c_str());
-	bouyancyShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"BouyancyCS.cso").c_str());
+	buoyancyShader = std::make_shared<SimpleComputeShader>(device.Get(), context.Get(), FixPath(L"BuoyancyCS.cso").c_str());
 
 	//initialize random values for velocity and density map
 
@@ -295,26 +295,26 @@ void FluidField::Simulate(float deltaTime)
 
 	//bouyancy
 	{
-		bouyancyShader->SetShader();
-		bouyancyShader->SetFloat("deltaTime", fixedTimeStep);
-		bouyancyShader->SetFloat("densityWeight", densityWeight);
-		bouyancyShader->SetFloat("temperatureBouyancy", temperatureBuoyancy);
-		bouyancyShader->SetFloat("ambientTemperature", ambientTemperature);
-		bouyancyShader->CopyAllBufferData();
+		buoyancyShader->SetShader();
+		buoyancyShader->SetFloat("deltaTime", fixedTimeStep);
+		buoyancyShader->SetFloat("densityWeight", densityWeight);
+		buoyancyShader->SetFloat("temperatureBouyancy", temperatureBuoyancy);
+		buoyancyShader->SetFloat("ambientTemperature", ambientTemperature);
+		buoyancyShader->CopyAllBufferData();
 
-		bouyancyShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv);
-		bouyancyShader->SetShaderResourceView("DensityMap", densityMap[0].srv);
-		bouyancyShader->SetShaderResourceView("TemperatureMap", temperatureMap[0].srv);
+		buoyancyShader->SetShaderResourceView("VelocityMap", velocityMap[0].srv);
+		buoyancyShader->SetShaderResourceView("DensityMap", densityMap[0].srv);
+		buoyancyShader->SetShaderResourceView("TemperatureMap", temperatureMap[0].srv);
 		//for obstacles
 		//bouyancyShader->SetShaderResourceView("ObstacleMap", obstacleMap.srv);
-		bouyancyShader->SetUnorderedAccessView("VelocityOut", velocityMap[1].uav);
+		buoyancyShader->SetUnorderedAccessView("VelocityOut", velocityMap[1].uav);
 	
-		bouyancyShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
+		buoyancyShader->DispatchByThreads(fluidSimGridRes, fluidSimGridRes, fluidSimGridRes);
 
-		bouyancyShader->SetShaderResourceView("VelocityMap", 0);
-		bouyancyShader->SetShaderResourceView("DensityMap", 0);
-		bouyancyShader->SetShaderResourceView("TemperatureMap", 0);
-		bouyancyShader->SetUnorderedAccessView("VelocityOut", 0);
+		buoyancyShader->SetShaderResourceView("VelocityMap", 0);
+		buoyancyShader->SetShaderResourceView("DensityMap", 0);
+		buoyancyShader->SetShaderResourceView("TemperatureMap", 0);
+		buoyancyShader->SetUnorderedAccessView("VelocityOut", 0);
 
 		SwapBuffers(velocityMap);
 	}

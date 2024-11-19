@@ -95,7 +95,7 @@ private:
 	std::shared_ptr<SimpleComputeShader> pressureProjectionShader;
 	std::shared_ptr<SimpleComputeShader> clearCompShader;
 	std::shared_ptr<SimpleComputeShader> injectSmokeShader;
-	std::shared_ptr<SimpleComputeShader> bouyancyShader;
+	std::shared_ptr<SimpleComputeShader> buoyancyShader;
 
 	//shaders to render the fluid
 	std::shared_ptr<SimplePixelShader> volumePS;
