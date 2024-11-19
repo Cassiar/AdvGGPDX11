@@ -3,7 +3,7 @@
 cbuffer ExternalData : register(b0)
 {
 	float densityWeight;
-	float temperatureBouyancy;
+	float temperatureBuoyancy;
 	float ambientTemperature;
 }
 
@@ -25,7 +25,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
 	// From: http://web.stanford.edu/class/cs237d/smoke.pdf
 	float3 buoyancyForce = float3(0, 1, 0) *
 		(-densityWeight * density + temperatureBuoyancy * (thisTemp - ambientTemperature));
-
+	
 	//add bouyancy force to cur velocity
-	VelocityOut[DTid] = float4(VelocityMap[DTid].xyz + bouyancyForce, 1);
+	VelocityOut[DTid] = float4(VelocityMap[DTid].xyz + buoyancyForce, 1);
 }
